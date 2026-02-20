@@ -22,9 +22,9 @@ sonar {
         property("sonar.projectKey", "advprog-2026-A3-project_json-inventory-katalog-service")
         property("sonar.organization", "advprog-a3")
         property("sonar.host.url", "https://sonarcloud.io")
-        property("sonar.coverage.jacoco.xmlReportPaths", "build/reports/jacoco/test/jacocoTestReport.xml")
     }
 }
+
 
 configurations {
     compileOnly {
