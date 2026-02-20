@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Katalog Jastip</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; color: #333; }
+        .container { max-width: 900px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        h1, h2 { color: #2c3e50; text-align: center; }
+        .form-group { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; background: #e9ecef; padding: 15px; border-radius: 8px;}
+        input, textarea, button { padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
+        input[type="text"], input[type="number"], input[type="date"] { flex: 1 1 30%; }
+        button { background-color: #27ae60; color: white; border: none; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px;}
+        button:hover { background-color: #2ecc71; }
+        .btn-delete { background-color: #e74c3c; width: auto; padding: 5px 10px; font-size: 12px; margin-top: 0;}
+        .btn-delete:hover { background-color: #c0392b; }
+        .search-bar { display: flex; gap: 10px; margin-bottom: 20px; }
+        .search-bar input { flex: 1; }
+        .search-bar button { width: auto; background-color: #2980b9; margin-top:0;}
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; }
+        .card { background: #fff; padding: 15px; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .price { color: #27ae60; font-weight: bold; font-size: 18px; margin: 5px 0;}
+        .badge { background: #34495e; color: white; padding: 3px 8px; border-radius: 12px; font-size: 12px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Inventory & Katalog Jastip</h1>
+
+    <h2>Tambah Barang Jastip Baru</h2>
+    <form id="addForm" class="form-group" onsubmit="tambahBarang(event)">
+        <input type="text" id="nama" placeholder="Nama Barang" required>
+        <input type="number" id="harga" placeholder="Harga (Rp)" required>
+        <input type="number" id="stok" placeholder="Jumlah Stok" required>
+        <input type="text" id="negaraAsal" placeholder="Negara Asal" required>
+        <input type="date" id="tanggalPembelian" title="Tanggal Pembelian" required>
+        <input type="date" id="tanggalKembali" title="Tanggal Kembali" required>
+        <input type="text" id="jastiperId" placeholder="ID Jastiper (misal: J-001)" required>
+        <textarea id="deskripsi" placeholder="Deskripsi Barang..." style="flex: 1 1 100%;" required></textarea>
+        <button type="submit">+ Simpan ke Database</button>
+    </form>
+
+    <hr>
+
+    <div class="search-bar">
+        <input type="text" id="searchInput" placeholder="Cari nama barang di sini...">
+        <button onclick="cariBarang()">🔍 Cari</button>
+        <button onclick="loadKatalog()" style="background-color: #7f8c8d;">Reset</button>
+    </div>
+
+    <h2>Daftar Barang Tersedia</h2>
+    <div id="katalog" class="grid">
+        <i>Memuat data dari database...</i>
+    </div>
+</div>
+
+<script>
+    const API_URL = 'http://localhost:8080/api/products';
+
+    // FITUR READ
+    function loadKatalog() {
+        fetch(API_URL)
+            .then(res => res.json())
+            .then(data => renderKatalog(data))
+            .catch(err => alert("Gagal mengambil data. Pastikan Backend IntelliJ jalan!"));
+    }
+
+    // FITUR CREATE
+    function tambahBarang(e) {
+        e.preventDefault();
+
+        const produkBaru = {
+            nama: document.getElementById('nama').value,
+            harga: parseFloat(document.getElementById('harga').value),
+            stok: parseInt(document.getElementById('stok').value),
+            negaraAsal: document.getElementById('negaraAsal').value,
+            tanggalPembelian: document.getElementById('tanggalPembelian').value,
+            tanggalKembali: document.getElementById('tanggalKembali').value,
+            jastiperId: document.getElementById('jastiperId').value,
+            deskripsi: document.getElementById('deskripsi').value
+        };
+
+        fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(produkBaru)
+        })
+            .then(res => {
+                if(res.ok) {
+                    alert("Barang sukses ditambahkan ke Supabase!");
+                    document.getElementById('addForm').reset();
+                    loadKatalog();
+                }
+            });
+    }
+
+    // FITUR DELETE
+    function hapusBarang(id) {
+        if(confirm("Yakin mau hapus barang ini?")) {
+            fetch(`${API_URL}/${id}`, { method: 'DELETE' })
+                .then(() => {
+                    alert("Barang berhasil dihapus!");
+                    loadKatalog();
+                });
+        }
+    }
+
+    // FITUR SEARCH
+    function cariBarang() {
+        const keyword = document.getElementById('searchInput').value;
+        if(!keyword) return loadKatalog();
+
+        fetch(`${API_URL}/search?nama=${keyword}`)
+            .then(res => res.json())
+            .then(data => renderKatalog(data));
+    }
+
+    // Fungsi bantuan untuk nampilin data ke HTML
+    function renderKatalog(data) {
+        const wadah = document.getElementById('katalog');
+        wadah.innerHTML = '';
+        if(data.length === 0) {
+            wadah.innerHTML = '<p>Tidak ada barang yang ditemukan.</p>';
+            return;
+        }
+
+        data.forEach(b => {
+            wadah.innerHTML += `
+                <div class="card">
+                    <h3>${b.nama}</h3>
+                    <p style="font-size:14px; color:#7f8c8d;">${b.deskripsi}</p>
+                    <p class="price">Rp ${b.harga.toLocaleString('id-ID')}</p>
+                    <p>📦 Stok: <b>${b.stok}</b> | 📍 ${b.negaraAsal}</p>
+                    <p><span class="badge">Jastiper: ${b.jastiperId}</span></p>
+                    <hr style="border:0; border-top:1px solid #eee;">
+                    <button class="btn-delete" onclick="hapusBarang('${b.id}')">🗑️ Hapus</button>
+                </div>
+            `;
+        });
+    }
+
+    window.onload = loadKatalog;
+</script>
+
+</body>
+</html>
