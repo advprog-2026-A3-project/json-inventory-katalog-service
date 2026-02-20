@@ -2,6 +2,9 @@ plugins {
     java
     id("org.springframework.boot") version "4.0.3"
     id("io.spring.dependency-management") version "1.1.7"
+    jacoco
+    id("org.sonarqube") version "5.0.0.4638"
+    id("checkstyle")
 }
 
 group = "id.ac.ui.cs.advprog"
@@ -11,6 +14,15 @@ description = "inventory-katalog"
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+sonar {
+    properties {
+        property("sonar.projectKey", "advprog-2026-A3-project_individual-preparation")
+        property("sonar.organization", "advprog-a3")
+        property("sonar.host.url", "https://sonarcloud.io")
+        property("sonar.coverage.jacoco.xmlReportPaths", "build/reports/jacoco/test/jacocoTestReport.xml")
     }
 }
 
@@ -38,4 +50,20 @@ dependencies {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+    finalizedBy(tasks.jacocoTestReport)
+}
+
+tasks.jacocoTestReport {
+    dependsOn(tasks.test)
+    reports {
+        xml.required.set(true)
+        csv.required.set(false)
+        html.required.set(true)
+    }
+}
+
+checkstyle {
+    toolVersion = "10.12.5"
+    isIgnoreFailures = false
+    maxWarnings = 0
 }
