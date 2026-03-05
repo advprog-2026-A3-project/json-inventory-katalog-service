@@ -72,4 +72,9 @@ public class ProductRepositoryImpl implements ProductRepository {
     public long count() {
         return entityManager.createQuery("SELECT COUNT(p) FROM Product p", Long.class).getSingleResult();
     }
+
+    @Override
+    public void deleteAll() {
+        entityManager.createQuery("DELETE FROM Product").executeUpdate();
+    }
 }

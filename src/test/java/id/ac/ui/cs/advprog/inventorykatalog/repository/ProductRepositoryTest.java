@@ -24,6 +24,8 @@ class ProductRepositoryTest {
 
     @BeforeEach
     void setUp() {
+        productRepository.deleteAll();
+
         product1 = Product.builder()
                 .nama("Sepatu Kets")
                 .stok(15)
@@ -66,5 +68,37 @@ class ProductRepositoryTest {
 
         Optional<Product> deletedProduct = productRepository.findById(product1.getId());
         assertFalse(deletedProduct.isPresent());
+    }
+
+    @Test
+    void testUpdateProduct() {
+        product1.setNama("Sepatu Kets Updated");
+
+        Product updatedProduct = productRepository.save(product1);
+
+        assertEquals("Sepatu Kets Updated", updatedProduct.getNama());
+        assertEquals(product1.getId(), updatedProduct.getId());
+    }
+
+    @Test
+    void testDeleteByIdNonExistent() {
+        long countBefore = productRepository.count();
+        productRepository.deleteById("non-existent-id");
+
+        assertEquals(countBefore, productRepository.count());
+    }
+
+    @Test
+    void testFindByJastiperId() {
+        List<Product> products = productRepository.findByJastiperId("jastip-001");
+
+        assertEquals(1, products.size());
+        assertEquals("Sepatu Kets", products.get(0).getNama());
+    }
+
+    @Test
+    void testExistsById() {
+        assertTrue(productRepository.existsById(product1.getId()));
+        assertFalse(productRepository.existsById("random-id"));
     }
 }

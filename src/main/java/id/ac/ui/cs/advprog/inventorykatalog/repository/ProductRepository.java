@@ -13,4 +13,5 @@ public interface ProductRepository {
     List<Product> findByNamaContainingIgnoreCase(String nama);
     List<Product> findByJastiperId(String jastiperId);
     long count();
+    void deleteAll();
 }
