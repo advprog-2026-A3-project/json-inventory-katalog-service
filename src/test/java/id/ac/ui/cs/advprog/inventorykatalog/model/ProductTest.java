@@ -11,8 +11,10 @@ class ProductTest {
     void setUp() {
         product = new Product();
         product.setId("eb558e9f-1c39-460e-8860-71af6af63bd6");
-        product.setName("Sampo Cap Bambang");
-        product.setQuantity(100);
+        product.setNama("Tas Ransel");
+        product.setStok(10);
+        product.setHarga(150000.0);
+        product.setJastiperId("jastip-001");
     }
 
     @Test
@@ -21,12 +23,17 @@ class ProductTest {
     }
 
     @Test
-    void testGetProductName() {
-        assertEquals("Sampo Cap Bambang", product.getName());
+    void testGetProductNama() {
+        assertEquals("Tas Ransel", product.getNama());
     }
 
     @Test
-    void testGetProductQuantity() {
-        assertEquals(100, product.getQuantity());
+    void testGetProductStok() {
+        assertEquals(10, product.getStok());
+    }
+
+    @Test
+    void testGetProductHarga() {
+        assertEquals(150000.0, product.getHarga());
     }
 }
