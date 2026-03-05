@@ -3,58 +3,68 @@ package id.ac.ui.cs.advprog.inventorykatalog.repository;
 import id.ac.ui.cs.advprog.inventorykatalog.model.Product;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
-@ExtendWith(MockitoExtension.class)
+@SpringBootTest
+@Import(ProductRepositoryImpl.class)
 class ProductRepositoryTest {
 
-    @Mock
+    @Autowired
     private ProductRepository productRepository;
 
     private Product product1;
+    private Product product2;
 
     @BeforeEach
     void setUp() {
-        product1 = new Product();
-        product1.setId("123-abc");
-        product1.setNama("Sepatu Kets");
-        product1.setStok(15);
-        product1.setHarga(300000.0);
-        product1.setJastiperId("jastip-001");
+        product1 = Product.builder()
+                .nama("Sepatu Kets")
+                .stok(15)
+                .harga(300000.0)
+                .jastiperId("jastip-001")
+                .build();
+        product1 = productRepository.save(product1);
+
+        product2 = Product.builder()
+                .nama("Tas Ransel Kets")
+                .stok(5)
+                .harga(150000.0)
+                .jastiperId("jastip-002")
+                .build();
+        product2 = productRepository.save(product2);
     }
 
     @Test
-    void testFindById() {
-        when(productRepository.findById("123-abc")).thenReturn(Optional.of(product1));
-
-        Optional<Product> foundProduct = productRepository.findById("123-abc");
+    void testSaveAndFindById() {
+        Optional<Product> foundProduct = productRepository.findById(product1.getId());
         assertTrue(foundProduct.isPresent());
         assertEquals("Sepatu Kets", foundProduct.get().getNama());
     }
 
     @Test
-    void testFindByNamaContainingIgnoreCase() {
-        when(productRepository.findByNamaContainingIgnoreCase("kets")).thenReturn(List.of(product1));
-
-        List<Product> products = productRepository.findByNamaContainingIgnoreCase("kets");
-        assertEquals(1, products.size());
-        assertEquals("Sepatu Kets", products.get(0).getNama());
+    void testFindAll() {
+        List<Product> products = productRepository.findAll();
+        assertEquals(2, products.size());
     }
 
     @Test
-    void testFindByJastiperId() {
-        when(productRepository.findByJastiperId("jastip-001")).thenReturn(List.of(product1));
+    void testFindByNamaContainingIgnoreCase() {
+        List<Product> products = productRepository.findByNamaContainingIgnoreCase("KETS");
+        assertEquals(2, products.size());
+    }
 
-        List<Product> products = productRepository.findByJastiperId("jastip-001");
-        assertEquals(1, products.size());
-        assertEquals("Sepatu Kets", products.get(0).getNama());
+    @Test
+    void testDeleteById() {
+        productRepository.deleteById(product1.getId());
+
+        Optional<Product> deletedProduct = productRepository.findById(product1.getId());
+        assertFalse(deletedProduct.isPresent());
     }
 }
