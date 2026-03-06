@@ -1,10 +1,10 @@
-package id.ac.ui.cs.advprog.inventorykatalog.repository;
+package id.ac.ui.cs.advprog.inventorykatalog.service;
 
 import id.ac.ui.cs.advprog.inventorykatalog.model.Product;
 import java.util.List;
 import java.util.Optional;
 
-public interface ProductRepository {
+public interface ProductService {
     Product save(Product product);
     Optional<Product> findById(String id);
     List<Product> findAll();

@@ -1,7 +1,7 @@
 package id.ac.ui.cs.advprog.inventorykatalog.controller;
 
 import id.ac.ui.cs.advprog.inventorykatalog.model.Product;
-import id.ac.ui.cs.advprog.inventorykatalog.repository.ProductRepository;
+import id.ac.ui.cs.advprog.inventorykatalog.service.ProductService;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -17,11 +17,11 @@ import java.util.Optional;
 public class ProductController {
 
     @Autowired
-    private ProductRepository productRepository;
+    private ProductService productService;
 
     @PostConstruct
     public void initDummyData() {
-        if (productRepository.count() == 0) {
+        if (productService.count() == 0) {
             Product barang1 = Product.builder()
                     .nama("KitKat Matcha Jepang")
                     .deskripsi("Cokelat asli dari Akihabara")
@@ -32,24 +32,24 @@ public class ProductController {
                     .tanggalKembali(LocalDate.of(2026, 5, 15))
                     .jastiperId("jastiper-001")
                     .build();
-            productRepository.save(barang1);
+            productService.save(barang1);
         }
     }
 
     @GetMapping
     public ResponseEntity<List<Product>> getAllProducts() {
-        return ResponseEntity.ok(productRepository.findAll());
+        return ResponseEntity.ok(productService.findAll());
     }
 
     @PostMapping
     public ResponseEntity<Product> createProduct(@RequestBody Product product) {
-        Product savedProduct = productRepository.save(product);
+        Product savedProduct = productService.save(product);
         return ResponseEntity.ok(savedProduct);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<Product> updateProduct(@PathVariable String id, @RequestBody Product productDetails) {
-        Optional<Product> optionalProduct = productRepository.findById(id);
+        Optional<Product> optionalProduct = productService.findById(id);
         if (optionalProduct.isPresent()) {
             Product product = optionalProduct.get();
             product.setNama(productDetails.getNama());
@@ -60,7 +60,7 @@ public class ProductController {
             product.setTanggalPembelian(productDetails.getTanggalPembelian());
             product.setTanggalKembali(productDetails.getTanggalKembali());
 
-            Product updatedProduct = productRepository.save(product);
+            Product updatedProduct = productService.save(product);
             return ResponseEntity.ok(updatedProduct);
         } else {
             return ResponseEntity.notFound().build();
@@ -69,23 +69,21 @@ public class ProductController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteProduct(@PathVariable String id) {
-        if (productRepository.existsById(id)) {
-            productRepository.deleteById(id);
+        if (productService.existsById(id)) {
+            productService.deleteById(id);
             return ResponseEntity.ok().build();
         } else {
             return ResponseEntity.notFound().build();
         }
     }
 
-    // http://localhost:8080/api/products/search?nama=kitkat
     @GetMapping("/search")
     public ResponseEntity<List<Product>> searchByName(@RequestParam String nama) {
-        return ResponseEntity.ok(productRepository.findByNamaContainingIgnoreCase(nama));
+        return ResponseEntity.ok(productService.findByNamaContainingIgnoreCase(nama));
     }
 
-    // http://localhost:8080/api/products/jastiper/jastiper-001
     @GetMapping("/jastiper/{jastiperId}")
     public ResponseEntity<List<Product>> getByJastiper(@PathVariable String jastiperId) {
-        return ResponseEntity.ok(productRepository.findByJastiperId(jastiperId));
+        return ResponseEntity.ok(productService.findByJastiperId(jastiperId));
     }
 }
