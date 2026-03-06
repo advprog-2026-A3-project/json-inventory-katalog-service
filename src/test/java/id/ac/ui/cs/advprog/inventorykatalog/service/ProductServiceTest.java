@@ -11,6 +11,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -29,57 +30,49 @@ class ProductServiceTest {
     @BeforeEach
     void setUp() {
         product = new Product();
-        product.setId("eb558e9f-1c39-460e-8860-71af6af63bd6");
-        product.setNama("Sepatu Limited Edition");
-        product.setDeskripsi("Sepatu jastip dari Jepang");
-        product.setHarga(2000000);
-        product.setStok(5);
-        product.setNegaraAsal("Jepang");
-        product.setJastiperId("user-123");
+        product.setId("uuid-123");
+        product.setNama("Sepatu Keren");
+        product.setJastiperId("jastiper-abc");
     }
 
     @Test
-    void testCreateProduct() {
-        when(productRepository.create(product)).thenReturn(product);
-
-        Product createdProduct = productService.create(product);
-
-        assertNotNull(createdProduct);
-        assertEquals(product.getNama(), createdProduct.getNama());
-        verify(productRepository, times(1)).create(product);
+    void testSave() {
+        when(productRepository.save(product)).thenReturn(product);
+        Product saved = productService.save(product);
+        assertEquals(product.getNama(), saved.getNama());
+        verify(productRepository, times(1)).save(product);
     }
 
     @Test
-    void testFindAllProducts() {
-        List<Product> productList = new ArrayList<>();
-        productList.add(product);
-        when(productRepository.findAll()).thenReturn(productList);
-
-        List<Product> allProducts = productService.findAll();
-
-        assertFalse(allProducts.isEmpty());
-        assertEquals(1, allProducts.size());
-        assertEquals(product.getNama(), allProducts.get(0).getNama());
-        verify(productRepository, times(1)).findAll();
+    void testFindById() {
+        when(productRepository.findById("uuid-123")).thenReturn(Optional.of(product));
+        Optional<Product> found = productService.findById("uuid-123");
+        assertTrue(found.isPresent());
+        assertEquals("Sepatu Keren", found.get().getNama());
     }
 
     @Test
-    void testFindProductById() {
-        when(productRepository.findById("eb558e9f-1c39-460e-8860-71af6af63bd6")).thenReturn(product);
-
-        Product foundProduct = productService.findById("eb558e9f-1c39-460e-8860-71af6af63bd6");
-
-        assertNotNull(foundProduct);
-        assertEquals("eb558e9f-1c39-460e-8860-71af6af63bd6", foundProduct.getId());
-        verify(productRepository, times(1)).findById(anyString());
+    void testFindAll() {
+        List<Product> products = new ArrayList<>();
+        products.add(product);
+        when(productRepository.findAll()).thenReturn(products);
+        List<Product> result = productService.findAll();
+        assertEquals(1, result.size());
     }
 
     @Test
-    void testDeleteProduct() {
-        doNothing().when(productRepository).delete("eb558e9f-1c39-460e-8860-71af6af63bd6");
+    void testDeleteById() {
+        doNothing().when(productRepository).deleteById("uuid-123");
+        productService.deleteById("uuid-123");
+        verify(productRepository, times(1)).deleteById("uuid-123");
+    }
 
-        productService.delete("eb558e9f-1c39-460e-8860-71af6af63bd6");
-
-        verify(productRepository, times(1)).delete("eb558e9f-1c39-460e-8860-71af6af63bd6");
+    @Test
+    void testFindByNama() {
+        List<Product> products = new ArrayList<>();
+        products.add(product);
+        when(productRepository.findByNamaContainingIgnoreCase("sepatu")).thenReturn(products);
+        List<Product> result = productService.findByNamaContainingIgnoreCase("sepatu");
+        assertFalse(result.isEmpty());
     }
 }
