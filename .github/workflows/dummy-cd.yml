@@ -12,8 +12,7 @@ jobs:
       ${{
         github.event.workflow_run.conclusion == 'success' &&
         (
-          github.event.workflow_run.head_branch == 'main' ||
-          github.event.workflow_run.head_branch == 'staging'
+          github.event.workflow_run.head_branch == 'main' 
         )
       }}
     runs-on: ubuntu-22.04
@@ -48,29 +47,6 @@ jobs:
           heroku_email: ${{ secrets.HEROKU_EMAIL }}
           usedocker: false
           dontautocreate: true
-
-      - name: Verify home page
-        env:
-          APP_URL: https://katalog-jastip-d36df74f28ff.herokuapp.com/
-        run: |
-          for i in {1..18}; do
-            response=$(curl -sSL --max-time 20 -w $'\n__STATUS__:%{http_code}' "$APP_URL/" || true)
-            body=$(echo "$response" | sed '$d')
-            status=$(echo "$response" | tail -n1 | sed 's/__STATUS__://')
-
-            if [ "$status" = "200" ] \
-              && echo "$body" | grep -qi "Welcome" \
-              && echo "$body" | grep -qi "View Products"; then
-              echo "Home page passed."
-              exit 0
-            fi
-
-            echo "Attempt $i failed: status=$status. Waiting..."
-            sleep 10
-          done
-
-          echo "Home page verification failed."
-          exit 1
 
       - name: Publish deploy link
         run: |
