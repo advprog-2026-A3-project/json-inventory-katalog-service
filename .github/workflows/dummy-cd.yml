@@ -1,4 +1,4 @@
-name: Dummy CD (Guarded by CI)
+name: CD (Guarded by CI)
 
 on:
   workflow_run:
@@ -6,44 +6,73 @@ on:
     types: [completed]
 
 jobs:
-  ci_guard:
-    if: >-
+  deploy:
+    name: Test and Deploy to Heroku
+    if: >
       ${{
         github.event.workflow_run.conclusion == 'success' &&
         (
-          github.event.workflow_run.head_branch == 'staging' ||
-          github.event.workflow_run.head_branch == 'main'
+          github.event.workflow_run.head_branch == 'main' ||
+          github.event.workflow_run.head_branch == 'staging'
         )
       }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: CI guard passed
-        run: |
-          echo "CI workflow succeeded for branch: ${{ github.event.workflow_run.head_branch }}"
-          echo "CD is allowed to continue."
-
-  deploy_staging:
-    needs: ci_guard
-    if: ${{ github.event.workflow_run.head_branch == 'staging' }}
-    runs-on: ubuntu-latest
-    environment:
-      name: staging
-    steps:
-      - name: Dummy deploy to staging
-        run: |
-          echo "Deploying to STAGING (dummy)."
-          echo "Build from branch: ${{ github.event.workflow_run.head_branch }}"
-          echo "Commit SHA: ${{ github.event.workflow_run.head_sha }}"
-
-  deploy_production:
-    needs: ci_guard
-    if: ${{ github.event.workflow_run.head_branch == 'main' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     environment:
       name: production
+      url: https://katalog-jastip-d36df74f28ff.herokuapp.com/
+
     steps:
-      - name: Dummy deploy to production
+      - name: Checkout the same commit that passed CI
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
+      - name: Run tests
+        run: ./gradlew test
+
+      - name: Deploy to Heroku
+        uses: akhileshns/heroku-deploy@v3.14.15
+        with:
+          heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
+          heroku_app_name: ${{ secrets.HEROKU_APP_NAME }}
+          heroku_email: ${{ secrets.HEROKU_EMAIL }}
+          usedocker: false
+          dontautocreate: true
+
+      - name: Verify home page
+        env:
+          APP_URL: https://katalog-jastip-d36df74f28ff.herokuapp.com/
         run: |
-          echo "Deploying to PRODUCTION (dummy)."
-          echo "Build from branch: ${{ github.event.workflow_run.head_branch }}"
-          echo "Commit SHA: ${{ github.event.workflow_run.head_sha }}"
+          for i in {1..18}; do
+            response=$(curl -sSL --max-time 20 -w $'\n__STATUS__:%{http_code}' "$APP_URL/" || true)
+            body=$(echo "$response" | sed '$d')
+            status=$(echo "$response" | tail -n1 | sed 's/__STATUS__://')
+
+            if [ "$status" = "200" ] \
+              && echo "$body" | grep -qi "Welcome" \
+              && echo "$body" | grep -qi "View Products"; then
+              echo "Home page passed."
+              exit 0
+            fi
+
+            echo "Attempt $i failed: status=$status. Waiting..."
+            sleep 10
+          done
+
+          echo "Home page verification failed."
+          exit 1
+
+      - name: Publish deploy link
+        run: |
+          echo "### Deployment URL" >> $GITHUB_STEP_SUMMARY
+          echo "https://katalog-jastip-d36df74f28ff.herokuapp.com/" >> $GITHUB_STEP_SUMMARY
