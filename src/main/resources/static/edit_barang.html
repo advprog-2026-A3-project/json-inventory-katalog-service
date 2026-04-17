@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Edit Barang - Katalog</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+<div class="container mt-5" style="max-width: 600px;">
+  <div class="card shadow">
+    <div class="card-header bg-primary text-white">
+      <h4 class="mb-0">Edit Barang</h4>
+    </div>
+    <div class="card-body">
+      <form id="editForm">
+        <div class="mb-3">
+          <label class="form-label">Nama Barang</label>
+          <input type="text" id="nama" class="form-control" required>
+        </div>
+        <div class="row mb-3">
+          <div class="col">
+            <label class="form-label">Harga (Rp)</label>
+            <input type="number" id="harga" class="form-control" required>
+          </div>
+          <div class="col">
+            <label class="form-label">Stok</label>
+            <input type="number" id="stok" class="form-control" required>
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Negara Asal</label>
+          <input type="text" id="negaraAsal" class="form-control" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">ID Jastiper</label>
+          <input type="text" id="jastiperId" class="form-control" readonly>
+          <small class="text-muted">ID Jastiper tidak dapat diubah.</small>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">URL Gambar (Pisahkan dengan koma)</label>
+          <textarea id="imageUrls" class="form-control" rows="2"></textarea>
+        </div>
+        <div class="mb-4">
+          <label class="form-label">Deskripsi</label>
+          <textarea id="deskripsi" class="form-control" rows="3" required></textarea>
+        </div>
+        <div class="d-flex justify-content-between">
+          <a href="index.html" class="btn btn-secondary">Batal</a>
+          <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  const API_URL = '/api/products';
+  const urlParams = new URLSearchParams(window.location.search);
+  const productId = urlParams.get('id');
+
+  if (!productId) {
+    alert("ID Barang tidak ditemukan!");
+    window.location.href = 'katalog.html';
+  } else {
+    fetchExistingData(productId);
+  }
+
+  async function fetchExistingData(id) {
+    const response = await fetch(`${API_URL}/${id}`);
+    if (!response.ok) {
+      alert("Gagal mengambil data barang.");
+      return;
+    }
+    const p = await response.json();
+
+    document.getElementById('nama').value = p.nama;
+    document.getElementById('harga').value = p.harga;
+    document.getElementById('stok').value = p.stok;
+    document.getElementById('negaraAsal').value = p.negaraAsal;
+    document.getElementById('jastiperId').value = p.jastiperId;
+    document.getElementById('deskripsi').value = p.deskripsi;
+
+    // Gabungkan list URL gambar menjadi string dipisah koma
+    if (p.imageUrls) {
+      document.getElementById('imageUrls').value = p.imageUrls.join(', ');
+    }
+  }
+
+  document.getElementById('editForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const imgString = document.getElementById('imageUrls').value;
+    const imgArray = imgString ? imgString.split(',').map(s => s.trim()).filter(s => s !== '') : [];
+
+    const data = {
+      nama: document.getElementById('nama').value,
+      harga: parseFloat(document.getElementById('harga').value),
+      stok: parseInt(document.getElementById('stok').value),
+      negaraAsal: document.getElementById('negaraAsal').value,
+      jastiperId: document.getElementById('jastiperId').value,
+      deskripsi: document.getElementById('deskripsi').value,
+      imageUrls: imgArray
+    };
+
+    const response = await fetch(`${API_URL}/${productId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+
+    if (response.ok) {
+      alert("Barang berhasil diperbarui!");
+      window.location.href = 'index.html';
+    } else {
+      alert("Gagal memperbarui barang.");
+    }
+  });
+</script>
+</body>
+</html>

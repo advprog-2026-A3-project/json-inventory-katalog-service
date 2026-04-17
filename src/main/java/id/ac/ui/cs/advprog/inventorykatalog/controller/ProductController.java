@@ -59,6 +59,7 @@ public class ProductController {
             product.setNegaraAsal(productDetails.getNegaraAsal());
             product.setTanggalPembelian(productDetails.getTanggalPembelian());
             product.setTanggalKembali(productDetails.getTanggalKembali());
+            product.setImageUrls(productDetails.getImageUrls());
 
             Product updatedProduct = productService.save(product);
             return ResponseEntity.ok(updatedProduct);
@@ -77,13 +78,20 @@ public class ProductController {
         }
     }
 
-    @GetMapping("/search")
+    @GetMapping("/{id}")
+    public ResponseEntity<Product> getProductById(@PathVariable String id) {
+        Optional<Product> product = productService.findById(id);
+        return product.map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/search/nama")
     public ResponseEntity<List<Product>> searchByName(@RequestParam String nama) {
         return ResponseEntity.ok(productService.findByNamaContainingIgnoreCase(nama));
     }
 
-    @GetMapping("/jastiper/{jastiperId}")
-    public ResponseEntity<List<Product>> getByJastiper(@PathVariable String jastiperId) {
+    @GetMapping("/search/jastiper")
+    public ResponseEntity<List<Product>> getByJastiper(@RequestParam String jastiperId) {
         return ResponseEntity.ok(productService.findByJastiperId(jastiperId));
     }
 }
