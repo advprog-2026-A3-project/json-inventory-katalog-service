@@ -1,91 +1,232 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>Katalog Jastip</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Internal - Inventory Katalog</title>
+
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <style>
+    :root { --primary-color: #4361ee; --secondary-color: #3f37c9; }
+    body { background-color: #f8f9fa; font-family: 'Inter', sans-serif; }
+    .navbar { background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .card { border: none; border-radius: 12px; transition: transform 0.2s; }
+    .table-container { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+    .img-preview-sm { width: 45px; height: 45px; object-fit: cover; border-radius: 8px; border: 2px solid #eee; }
+    .search-box { background: white; border-radius: 50px; padding: 5px 20px; border: 1px solid #ddd; }
+    .search-box input { border: none; outline: none; padding: 10px; width: 100%; }
+    .btn-primary { background-color: var(--primary-color); border: none; }
+    .btn-primary:hover { background-color: var(--secondary-color); }
+    .badge-id { font-family: monospace; font-size: 0.75rem; background: #e9ecef; color: #495057; padding: 4px 8px; border-radius: 4px; }
+  </style>
 </head>
-<body class="bg-light">
+<body>
 
-<div class="container mt-4">
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Katalog Barang Jastip</h2>
-    <a href="tambah_barang.html" class="btn btn-success">+ Tambah Barang</a>
+<nav class="navbar navbar-dark mb-4">
+  <div class="container">
+    <span class="navbar-brand fw-bold"><i class="fas fa-boxes-stacked me-2"></i> Inventory Katalog <span class="badge bg-light text-dark ms-2">Backend</span></span>
   </div>
+</nav>
 
-  <div class="card p-3 mb-4 shadow-sm">
-    <div class="row g-2">
-      <div class="col-md-5">
-        <input type="text" id="searchNama" class="form-control" placeholder="Cari nama barang...">
+<div class="container">
+  <div class="row mb-4 align-items-center">
+    <div class="col-md-6">
+      <div class="search-box d-flex align-items-center">
+        <i class="fas fa-search text-muted"></i>
+        <input type="text" id="globalSearch" placeholder="Cari nama barang atau Jastiper..." onkeyup="handleQuickSearch()">
       </div>
-      <div class="col-md-5">
-        <input type="text" id="searchJastiper" class="form-control" placeholder="Cari ID Jastiper...">
-      </div>
-      <div class="col-md-2 d-flex gap-2">
-        <button class="btn btn-primary w-100" onclick="searchProducts()">Cari</button>
-        <button class="btn btn-secondary w-100" onclick="fetchProducts()">Reset</button>
-      </div>
+    </div>
+    <div class="col-md-6 text-md-end mt-3 mt-md-0">
+      <button class="btn btn-primary px-4 shadow-sm" onclick="openModal('add')">
+        <i class="fas fa-plus me-2"></i> Tambah Product Baru
+      </button>
     </div>
   </div>
 
-  <div class="row" id="katalogGrid">
+  <div class="table-container">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h5 class="fw-bold mb-0 text-dark">Daftar Produk di Database</h5>
+      <button class="btn btn-light btn-sm" onclick="fetchProducts()"><i class="fas fa-sync-alt"></i> Refresh</button>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead class="table-light">
+        <tr>
+          <th>Gambar</th>
+          <th>Info Produk</th>
+          <th>Harga & Stok</th>
+          <th>Asal & Jastiper</th>
+          <th class="text-center">Aksi</th>
+        </tr>
+        </thead>
+        <tbody id="tableBody">
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="formModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header border-0 bg-light">
+        <h5 class="modal-title fw-bold" id="modalTitle">Konfigurasi API Request</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-4">
+        <form id="apiForm">
+          <input type="hidden" id="formId">
+          <div class="row g-3">
+            <div class="col-md-12">
+              <label class="form-label fw-semibold">Nama Barang</label>
+              <input type="text" id="formNama" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Harga (Rp)</label>
+              <input type="number" id="formHarga" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Stok</label>
+              <input type="number" id="formStok" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Negara Asal</label>
+              <input type="text" id="formAsal" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">ID Jastiper</label>
+              <input type="text" id="formJastiper" class="form-control" required>
+            </div>
+            <div class="col-md-12">
+              <label class="form-label fw-semibold">URL Gambar (Pisahkan dengan koma)</label>
+              <textarea id="formGambar" class="form-control" rows="2" placeholder="https://image1.jpg, https://image2.jpg"></textarea>
+            </div>
+            <div class="col-md-12">
+              <label class="form-label fw-semibold">Deskripsi</label>
+              <textarea id="formDeskripsi" class="form-control" rows="3"></textarea>
+            </div>
+          </div>
+          <div class="mt-4">
+            <button type="submit" class="btn btn-primary w-100 py-2 fw-bold">Kirim API Request</button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 </div>
 
 <script>
   const API_URL = '/api/products';
+  const formModal = new bootstrap.Modal(document.getElementById('formModal'));
+  let currentMode = 'add';
 
   document.addEventListener('DOMContentLoaded', fetchProducts);
 
-  function renderCards(products) {
-    const grid = document.getElementById('katalogGrid');
-    grid.innerHTML = '';
+  async function fetchProducts() {
+    try {
+      const res = await fetch(API_URL);
+      const data = await res.json();
+      renderTable(data);
+    } catch (err) { console.error("Gagal fetch data", err); }
+  }
 
-    if(products.length === 0) {
-      grid.innerHTML = '<div class="col-12"><p class="text-center text-muted">Tidak ada barang ditemukan.</p></div>';
-      return;
-    }
-
-    products.forEach(p => {
-      const thumbnail = (p.imageUrls && p.imageUrls.length > 0) ? p.imageUrls[0] : 'https://via.placeholder.com/300x200?text=No+Image';
-
-      grid.innerHTML += `
-        <div class="col-md-4 mb-4">
-          <div class="card h-100 shadow-sm">
-            <img src="${thumbnail}" class="card-img-top" style="height: 200px; object-fit: cover;">
-            <div class="card-body d-flex flex-column">
-              <h5 class="card-title">${p.nama}</h5>
-              <h6 class="text-primary">Rp ${p.harga.toLocaleString()}</h6>
-              <div class="mt-auto d-grid gap-2">
-                <a href="detail_barang.html?id=${p.id}" class="btn btn-outline-primary">Lihat Detail</a>
-                <a href="edit_barang.html?id=${p.id}" class="btn btn-warning btn-sm">Edit Barang</a>
-              </div>
-            </div>
-          </div>
-        </div>
-      `;
+  function renderTable(data) {
+    const tbody = document.getElementById('tableBody');
+    tbody.innerHTML = '';
+    data.forEach(p => {
+      const firstImg = (p.imageUrls && p.imageUrls.length > 0) ? p.imageUrls[0] : 'https://via.placeholder.com/50';
+      tbody.innerHTML += `
+                <tr>
+                    <td><img src="${firstImg}" class="img-preview-sm" onerror="this.src='https://via.placeholder.com/50'"></td>
+                    <td>
+                        <div class="fw-bold text-dark">${p.nama}</div>
+                        <div class="badge-id">${p.id}</div>
+                    </td>
+                    <td>
+                        <div class="text-primary fw-bold">Rp ${p.harga.toLocaleString()}</div>
+                        <div class="small text-muted">Stok: ${p.stok}</div>
+                    </td>
+                    <td>
+                        <div class="small"><i class="fas fa-map-marker-alt text-danger me-1"></i> ${p.negaraAsal || '-'}</div>
+                        <div class="small text-muted"><i class="fas fa-user me-1"></i> ${p.jastiperId}</div>
+                    </td>
+                    <td class="text-center">
+                        <div class="btn-group shadow-sm">
+                            <button class="btn btn-white btn-sm" title="Edit" onclick="openModal('edit', '${p.id}')"><i class="fas fa-edit text-warning"></i></button>
+                            <button class="btn btn-white btn-sm" title="Hapus" onclick="deleteData('${p.id}')"><i class="fas fa-trash text-danger"></i></button>
+                        </div>
+                    </td>
+                </tr>
+            `;
     });
   }
 
-  async function fetchProducts() {
-    document.getElementById('searchNama').value = '';
-    document.getElementById('searchJastiper').value = '';
-    const res = await fetch(API_URL);
-    const products = await res.json();
-    renderCards(products);
+  async function handleQuickSearch() {
+    const keyword = document.getElementById('globalSearch').value;
+    if(keyword.length < 1) return fetchProducts();
+
+    // Coba cari berdasarkan nama dulu
+    const res = await fetch(`${API_URL}/search/nama?nama=${keyword}`);
+    const data = await res.json();
+    renderTable(data);
   }
 
-  async function searchProducts() {
-    const nama = document.getElementById('searchNama').value;
-    const jastiper = document.getElementById('searchJastiper').value;
+  async function openModal(mode, id = null) {
+    currentMode = mode;
+    document.getElementById('apiForm').reset();
+    document.getElementById('modalTitle').innerText = mode === 'add' ? 'Tambah Data (POST /api/products)' : 'Edit Data (PUT /api/products/{id})';
 
-    let url = API_URL;
-    if (nama) url = `${API_URL}/search/nama?nama=${nama}`;
-    else if (jastiper) url = `${API_URL}/search/jastiper?jastiperId=${jastiper}`;
+    if(mode === 'edit' && id) {
+      const res = await fetch(`${API_URL}/${id}`);
+      const p = await res.json();
+      document.getElementById('formId').value = p.id;
+      document.getElementById('formNama').value = p.nama;
+      document.getElementById('formHarga').value = p.harga;
+      document.getElementById('formStok').value = p.stok;
+      document.getElementById('formAsal').value = p.negaraAsal;
+      document.getElementById('formJastiper').value = p.jastiperId;
+      document.getElementById('formDeskripsi').value = p.deskripsi;
+      document.getElementById('formGambar').value = p.imageUrls ? p.imageUrls.join(', ') : '';
+    }
+    formModal.show();
+  }
 
-    const res = await fetch(url);
-    const products = await res.json();
-    renderCards(products);
+  document.getElementById('apiForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const payload = {
+      nama: document.getElementById('formNama').value,
+      harga: parseFloat(document.getElementById('formHarga').value),
+      stok: parseInt(document.getElementById('formStok').value),
+      negaraAsal: document.getElementById('formAsal').value,
+      jastiperId: document.getElementById('formJastiper').value,
+      deskripsi: document.getElementById('formDeskripsi').value,
+      imageUrls: document.getElementById('formGambar').value.split(',').map(s=>s.trim()).filter(s=>s!=='')
+    };
+
+    const url = currentMode === 'add' ? API_URL : `${API_URL}/${document.getElementById('formId').value}`;
+    const method = currentMode === 'add' ? 'POST' : 'PUT';
+
+    const response = await fetch(url, {
+      method: method,
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload)
+    });
+
+    if(response.ok) {
+      formModal.hide();
+      fetchProducts();
+    } else { alert("API Error! Cek Log Console."); }
+  });
+
+  async function deleteData(id) {
+    if(confirm('🚨 Kirim Request DELETE untuk ID ini?')) {
+      await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+      fetchProducts();
+    }
   }
 </script>
 </body>
