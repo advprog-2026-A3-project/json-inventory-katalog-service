@@ -75,4 +75,32 @@ class ProductServiceTest {
         List<Product> result = productService.findByNamaContainingIgnoreCase("sepatu");
         assertFalse(result.isEmpty());
     }
+
+    @Test
+    void testFindByJastiperId() {
+        Product product1 = new Product();
+        product1.setJastiperId("jastip-123");
+        List<Product> products = List.of(product1);
+        when(productRepository.findByJastiperId("jastip-123")).thenReturn(products);
+        List<Product> result = productService.findByJastiperId("jastip-123");
+
+        assertEquals(1, result.size());
+        assertEquals("jastip-123", result.get(0).getJastiperId());
+        verify(productRepository, times(1)).findByJastiperId("jastip-123");
+    }
+
+    @Test
+    void testExistsById() {
+        when(productRepository.existsById("some-id")).thenReturn(true);
+
+        boolean exists = productService.existsById("some-id");
+        assertTrue(exists);
+        verify(productRepository, times(1)).existsById("some-id");
+    }
+
+    @Test
+    void testDeleteAll() {
+        productService.deleteAll();
+        verify(productRepository, times(1)).deleteAll();
+    }
 }
