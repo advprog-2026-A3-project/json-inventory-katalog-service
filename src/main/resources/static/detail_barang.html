@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Detail Barang</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</head>
+<body class="bg-light">
+
+<div class="container mt-5" style="max-width: 800px;">
+  <a href="index.html" class="btn btn-outline-secondary mb-3">&larr; Kembali ke Katalog</a>
+
+  <div class="card shadow" id="detailCard" style="display: none;">
+
+    <div id="productCarousel" class="carousel slide" data-bs-ride="carousel">
+      <div class="carousel-inner" id="carouselInner" style="height: 400px; background-color: #eee;">
+      </div>
+      <button class="carousel-control-prev" type="button" data-bs-target="#productCarousel" data-bs-slide="prev">
+        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+      </button>
+      <button class="carousel-control-next" type="button" data-bs-target="#productCarousel" data-bs-slide="next">
+        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+      </button>
+    </div>
+
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h2 class="card-title mb-0" id="detailNama">Memuat...</h2>
+        <span class="badge bg-primary fs-5" id="detailHarga">Rp 0</span>
+      </div>
+      <p class="text-muted">Dibawa oleh Jastiper: <strong id="detailJastiper">...</strong></p>
+
+      <hr>
+      <h5>Deskripsi Produk</h5>
+      <p id="detailDeskripsi">...</p>
+
+      <div class="row mt-4">
+        <div class="col-md-6">
+          <ul class="list-group list-group-flush">
+            <li class="list-group-item"><strong>Negara Asal:</strong> <span id="detailAsal">...</span></li>
+            <li class="list-group-item"><strong>Sisa Stok:</strong> <span id="detailStok">...</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Fungsi untuk mengambil parameter ?id= dari URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const productId = urlParams.get('id');
+
+  if (!productId) {
+    alert("ID Barang tidak ditemukan!");
+    window.location.href = 'katalog.html';
+  } else {
+    fetchDetail(productId);
+  }
+
+  async function fetchDetail(id) {
+    const response = await fetch(`/api/products/${id}`);
+    if(!response.ok) {
+      alert("Barang tidak ditemukan di database!");
+      return;
+    }
+    const p = await response.json();
+
+    // Tampilkan data teks
+    document.getElementById('detailNama').innerText = p.nama;
+    document.getElementById('detailHarga').innerText = `Rp ${p.harga.toLocaleString()}`;
+    document.getElementById('detailJastiper').innerText = p.jastiperId;
+    document.getElementById('detailDeskripsi').innerText = p.deskripsi;
+    document.getElementById('detailAsal').innerText = p.negaraAsal || '-';
+    document.getElementById('detailStok').innerText = p.stok;
+
+    // Tampilkan Slider Gambar
+    const carouselInner = document.getElementById('carouselInner');
+    carouselInner.innerHTML = '';
+
+    if (p.imageUrls && p.imageUrls.length > 0) {
+      p.imageUrls.forEach((url, index) => {
+        const activeClass = index === 0 ? 'active' : '';
+        carouselInner.innerHTML += `
+          <div class="carousel-item ${activeClass} h-100">
+            <img src="${url}" class="d-block w-100 h-100" style="object-fit: contain;" alt="Gambar Produk">
+          </div>
+        `;
+      });
+    } else {
+      // Jika tidak ada gambar
+      carouselInner.innerHTML = `
+        <div class="carousel-item active h-100 d-flex align-items-center justify-content-center">
+          <h4 class="text-muted">Tidak ada gambar</h4>
+        </div>
+      `;
+      document.querySelector('.carousel-control-prev').style.display = 'none';
+      document.querySelector('.carousel-control-next').style.display = 'none';
+    }
+
+    document.getElementById('detailCard').style.display = 'block';
+  }
+</script>
+</body>
+</html>

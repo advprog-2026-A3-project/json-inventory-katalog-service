@@ -108,7 +108,7 @@ class ProductControllerTest {
     void testSearchByName() throws Exception {
         when(productService.findByNamaContainingIgnoreCase("KitKat")).thenReturn(Arrays.asList(product1));
 
-        mockMvc.perform(get("/api/products/search")
+        mockMvc.perform(get("/api/products/search/nama")
                         .param("nama", "KitKat"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].nama").value("KitKat Matcha Jepang"));
@@ -118,7 +118,8 @@ class ProductControllerTest {
     void testGetByJastiper() throws Exception {
         when(productService.findByJastiperId("jastiper-001")).thenReturn(Arrays.asList(product1));
 
-        mockMvc.perform(get("/api/products/jastiper/jastiper-001"))
+        mockMvc.perform(get("/api/products/search/jastiper")
+                        .param("jastiperId", "jastiper-001"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].nama").value("KitKat Matcha Jepang"));
     }
@@ -135,5 +136,46 @@ class ProductControllerTest {
         when(productService.count()).thenReturn(1L);
         productController.initDummyData();
         verify(productService, never()).save(any(Product.class));
+    }
+
+    @Test
+    void testUpdateProduct_WithImages() throws Exception {
+        product1.setImageUrls(Arrays.asList("http://img.com/1.jpg"));
+        when(productService.findById("123-abc")).thenReturn(Optional.of(product1));
+        when(productService.save(any(Product.class))).thenReturn(product1);
+
+        String jsonRequest = """
+            {
+                "nama":"KitKat Update",
+                "harga":60000.0,
+                "stok":30,
+                "imageUrls": ["http://img.com/new.jpg"]
+            }
+            """;
+
+        mockMvc.perform(put("/api/products/123-abc")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequest))
+                .andExpect(status().isOk());
+
+        verify(productService).save(argThat(p -> p.getImageUrls().contains("http://img.com/new.jpg")));
+    }
+
+    @Test
+    void testGetProductById_NotFound() throws Exception {
+        when(productService.findById("id-ngasal")).thenReturn(Optional.empty());
+
+        mockMvc.perform(get("/api/products/id-ngasal"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void testDeleteProduct_NotFound() throws Exception {
+        when(productService.existsById("id-ngasal")).thenReturn(false);
+
+        mockMvc.perform(delete("/api/products/id-ngasal"))
+                .andExpect(status().isNotFound());
+
+        verify(productService, never()).deleteById(anyString());
     }
 }

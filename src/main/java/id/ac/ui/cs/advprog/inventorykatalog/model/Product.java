@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.time.LocalDate;
+import java.util.List;
 
 @Entity
 @Table(name = "products")
@@ -33,6 +34,11 @@ public class Product {
     private String negaraAsal;
     private LocalDate tanggalPembelian;
     private LocalDate tanggalKembali;
+
+    @ElementCollection
+    @CollectionTable(name = "product_images", joinColumns = @JoinColumn(name = "product_id"))
+    @Column(name = "image_url")
+    private List<String> imageUrls;
 
     @Column(nullable = false)
     private String jastiperId;
