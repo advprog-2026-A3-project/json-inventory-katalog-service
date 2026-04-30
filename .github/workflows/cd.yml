@@ -1,4 +1,4 @@
-name: CD (Guarded by CI)
+name: CD to AWS EC2
 
 on:
   workflow_run:
@@ -7,48 +7,52 @@ on:
 
 jobs:
   deploy:
-    name: Test and Deploy to Heroku
+    name: Deploy Docker app to EC2
     if: >
       ${{
         github.event.workflow_run.conclusion == 'success' &&
-        (
-          github.event.workflow_run.head_branch == 'main' 
-        )
+        github.event.workflow_run.head_branch == 'main'
       }}
     runs-on: ubuntu-22.04
+
     environment:
       name: production
-      url: https://katalog-jastip-d36df74f28ff.herokuapp.com/
+      url: http://3.219.224.138
 
     steps:
-      - name: Checkout the same commit that passed CI
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.workflow_run.head_sha }}
+      - name: Deploy via SSH
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_USER: ${{ secrets.EC2_USER }}
+          EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$EC2_SSH_KEY" > ~/.ssh/ec2_key
+          chmod 600 ~/.ssh/ec2_key
+          ssh-keyscan -H "$EC2_HOST" >> ~/.ssh/known_hosts
 
-      - name: Set up Java 21
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: "21"
-          cache: gradle
+          ssh -i ~/.ssh/ec2_key "$EC2_USER@$EC2_HOST" << 'EOF'
+            set -e
 
-      - name: Make gradlew executable
-        run: chmod +x ./gradlew
+            cd ~/json-inventory-katalog-service
 
-      - name: Run tests
-        run: ./gradlew test
+            git fetch origin
+            git checkout main
+            git pull origin main
 
-      - name: Deploy to Heroku
-        uses: akhileshns/heroku-deploy@v3.14.15
-        with:
-          heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
-          heroku_app_name: ${{ secrets.HEROKU_APP_NAME }}
-          heroku_email: ${{ secrets.HEROKU_EMAIL }}
-          usedocker: false
-          dontautocreate: true
+            sudo docker rm -f inventory-katalog || true
+            sudo docker build -t inventory-katalog .
+            sudo docker run -d \
+              --name inventory-katalog \
+              --restart unless-stopped \
+              --env-file .env \
+              -p 80:8080 \
+              inventory-katalog
+
+            sudo docker ps
+          EOF
 
       - name: Publish deploy link
         run: |
           echo "### Deployment URL" >> $GITHUB_STEP_SUMMARY
-          echo "https://katalog-jastip-d36df74f28ff.herokuapp.com/" >> $GITHUB_STEP_SUMMARY
+          echo "http://3.219.224.138" >> $GITHUB_STEP_SUMMARY
