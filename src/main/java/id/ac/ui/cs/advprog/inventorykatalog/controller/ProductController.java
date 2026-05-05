@@ -80,7 +80,7 @@ public class ProductController {
         String currentUserId = authClient.getCurrentUserId(authorizationHeader);
         Product product = optionalProduct.get();
 
-        if (!product.getJastiperId().equals(currentUserId)) {
+        if (!currentUserId.equals(product.getJastiperId())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
@@ -111,7 +111,7 @@ public class ProductController {
         String currentUserId = authClient.getCurrentUserId(authorizationHeader);
         Product product = optionalProduct.get();
 
-        if (!product.getJastiperId().equals(currentUserId)) {
+        if (!currentUserId.equals(product.getJastiperId())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
