@@ -1,13 +1,14 @@
 package id.ac.ui.cs.advprog.inventorykatalog.controller;
 
+import id.ac.ui.cs.advprog.inventorykatalog.client.AuthClient;
 import id.ac.ui.cs.advprog.inventorykatalog.model.Product;
 import id.ac.ui.cs.advprog.inventorykatalog.service.ProductService;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import id.ac.ui.cs.advprog.inventorykatalog.client.AuthClient;
-import org.springframework.http.HttpStatus;
+
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -18,10 +19,10 @@ import java.util.Optional;
 public class ProductController {
 
     @Autowired
-    private AuthClient authClient;
+    private ProductService productService;
 
     @Autowired
-    private ProductService productService;
+    private AuthClient authClient;
 
     @PostConstruct
     public void initDummyData() {
@@ -40,14 +41,6 @@ public class ProductController {
         }
     }
 
-    @GetMapping("/me")
-    public ResponseEntity<List<Product>> getMyProducts(
-            @RequestHeader(value = "Authorization", required = false) String authorizationHeader
-    ) {
-        String currentUserId = authClient.getCurrentUserId(authorizationHeader);
-        return ResponseEntity.ok(productService.findByJastiperId(currentUserId));
-    }
-
     @GetMapping
     public ResponseEntity<List<Product>> getAllProducts() {
         return ResponseEntity.ok(productService.findAll());
@@ -58,11 +51,19 @@ public class ProductController {
             @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
             @RequestBody Product product
     ) {
-        String currentUserId = authClient.getCurrentUserId(authorizationHeader);
-        product.setJastiperId(currentUserId);
+        String currentJastiperId = authClient.getCurrentJastiperId(authorizationHeader);
+        product.setJastiperId(currentJastiperId);
 
         Product savedProduct = productService.save(product);
         return ResponseEntity.ok(savedProduct);
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<List<Product>> getMyProducts(
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader
+    ) {
+        String currentJastiperId = authClient.getCurrentJastiperId(authorizationHeader);
+        return ResponseEntity.ok(productService.findByJastiperId(currentJastiperId));
     }
 
     @PutMapping("/{id}")
@@ -77,10 +78,10 @@ public class ProductController {
             return ResponseEntity.notFound().build();
         }
 
-        String currentUserId = authClient.getCurrentUserId(authorizationHeader);
+        String currentJastiperId = authClient.getCurrentJastiperId(authorizationHeader);
         Product product = optionalProduct.get();
 
-        if (!currentUserId.equals(product.getJastiperId())) {
+        if (!currentJastiperId.equals(product.getJastiperId())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
@@ -108,10 +109,10 @@ public class ProductController {
             return ResponseEntity.notFound().build();
         }
 
-        String currentUserId = authClient.getCurrentUserId(authorizationHeader);
+        String currentJastiperId = authClient.getCurrentJastiperId(authorizationHeader);
         Product product = optionalProduct.get();
 
-        if (!currentUserId.equals(product.getJastiperId())) {
+        if (!currentJastiperId.equals(product.getJastiperId())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
