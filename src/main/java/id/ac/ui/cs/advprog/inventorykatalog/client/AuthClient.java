@@ -1,5 +1,6 @@
 package id.ac.ui.cs.advprog.inventorykatalog.client;
 
+import id.ac.ui.cs.advprog.inventorykatalog.authorization.ProductAuthorizationPolicy;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -15,6 +16,9 @@ public class AuthClient {
     private String authServiceBaseUrl;
 
     private final RestTemplate restTemplate = new RestTemplate();
+
+    private final ProductAuthorizationPolicy authorizationPolicy =
+            ProductAuthorizationPolicy.getInstance();
 
     public AuthProfileResponse getCurrentUserProfile(String authorizationHeader) {
         if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
@@ -67,21 +71,6 @@ public class AuthClient {
 
     public String getCurrentJastiperId(String authorizationHeader) {
         AuthProfileResponse profile = getCurrentUserProfile(authorizationHeader);
-
-        if (!profile.isActive()) {
-            throw new ResponseStatusException(
-                    HttpStatus.FORBIDDEN,
-                    "User account is not active"
-            );
-        }
-
-        if (!"JASTIPER".equals(profile.getRole())) {
-            throw new ResponseStatusException(
-                    HttpStatus.FORBIDDEN,
-                    "Only JASTIPER can manage products"
-            );
-        }
-
-        return profile.getId().toString();
+        return authorizationPolicy.resolveJastiperId(profile);
     }
 }

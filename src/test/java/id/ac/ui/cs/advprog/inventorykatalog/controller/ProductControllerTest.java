@@ -1,8 +1,11 @@
 package id.ac.ui.cs.advprog.inventorykatalog.controller;
 
-import id.ac.ui.cs.advprog.inventorykatalog.client.AuthClient;
 import id.ac.ui.cs.advprog.inventorykatalog.model.Product;
 import id.ac.ui.cs.advprog.inventorykatalog.service.ProductService;
+import id.ac.ui.cs.advprog.inventorykatalog.usecase.CreateProductUseCase;
+import id.ac.ui.cs.advprog.inventorykatalog.usecase.DeleteProductUseCase;
+import id.ac.ui.cs.advprog.inventorykatalog.usecase.GetMyProductsUseCase;
+import id.ac.ui.cs.advprog.inventorykatalog.usecase.UpdateProductUseCase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,8 +24,7 @@ import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -43,7 +45,16 @@ class ProductControllerTest {
     private ProductService productService;
 
     @Mock
-    private AuthClient authClient;
+    private CreateProductUseCase createProductUseCase;
+
+    @Mock
+    private UpdateProductUseCase updateProductUseCase;
+
+    @Mock
+    private DeleteProductUseCase deleteProductUseCase;
+
+    @Mock
+    private GetMyProductsUseCase getMyProductsUseCase;
 
     @InjectMocks
     private ProductController productController;
@@ -58,10 +69,6 @@ class ProductControllerTest {
         mockMvc = MockMvcBuilders
                 .standaloneSetup(productController)
                 .build();
-
-        lenient()
-                .when(authClient.getCurrentJastiperId(anyString()))
-                .thenReturn(JASTIPER_ID);
 
         product1 = new Product();
         product1.setId("123-abc");
@@ -85,7 +92,7 @@ class ProductControllerTest {
 
     @Test
     void testCreateProduct() throws Exception {
-        when(productService.save(any(Product.class)))
+        when(createProductUseCase.execute(anyString(), any(Product.class)))
                 .thenReturn(product1);
 
         String jsonRequest = """
@@ -106,16 +113,12 @@ class ProductControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.nama").value("KitKat Matcha Jepang"));
 
-        verify(authClient).getCurrentJastiperId(AUTH_HEADER);
-
-        verify(productService).save(argThat(product ->
-                JASTIPER_ID.equals(product.getJastiperId())
-        ));
+        verify(createProductUseCase).execute(anyString(), any(Product.class));
     }
 
     @Test
     void testCreateProductForbiddenWhenNotJastiper() throws Exception {
-        when(authClient.getCurrentJastiperId(anyString()))
+        when(createProductUseCase.execute(anyString(), any(Product.class)))
                 .thenThrow(new ResponseStatusException(
                         HttpStatus.FORBIDDEN,
                         "Only JASTIPER can manage products"
@@ -142,7 +145,7 @@ class ProductControllerTest {
 
     @Test
     void testGetMyProducts() throws Exception {
-        when(productService.findByJastiperId(JASTIPER_ID))
+        when(getMyProductsUseCase.execute(AUTH_HEADER))
                 .thenReturn(Arrays.asList(product1));
 
         mockMvc.perform(get("/api/products/me")
@@ -150,8 +153,7 @@ class ProductControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].nama").value("KitKat Matcha Jepang"));
 
-        verify(authClient).getCurrentJastiperId(AUTH_HEADER);
-        verify(productService).findByJastiperId(JASTIPER_ID);
+        verify(getMyProductsUseCase).execute(AUTH_HEADER);
     }
 
     @Test
@@ -175,10 +177,7 @@ class ProductControllerTest {
 
     @Test
     void testUpdateProductSuccess() throws Exception {
-        when(productService.findById("123-abc"))
-                .thenReturn(Optional.of(product1));
-
-        when(productService.save(any(Product.class)))
+        when(updateProductUseCase.execute(anyString(), anyString(), any(Product.class)))
                 .thenReturn(product1);
 
         String jsonRequest = """
@@ -198,14 +197,17 @@ class ProductControllerTest {
                         .content(jsonRequest))
                 .andExpect(status().isOk());
 
-        verify(authClient).getCurrentJastiperId(AUTH_HEADER);
-        verify(productService).save(any(Product.class));
+        verify(updateProductUseCase)
+                .execute(anyString(), anyString(), any(Product.class));
     }
 
     @Test
     void testUpdateProductNotFound() throws Exception {
-        when(productService.findById("999-xyz"))
-                .thenReturn(Optional.empty());
+        when(updateProductUseCase.execute(anyString(), anyString(), any(Product.class)))
+                .thenThrow(new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Product not found"
+                ));
 
         String jsonRequest = """
                 {
@@ -222,16 +224,16 @@ class ProductControllerTest {
                         .content(jsonRequest))
                 .andExpect(status().isNotFound());
 
-        verify(authClient, never()).getCurrentJastiperId(anyString());
         verify(productService, never()).save(any(Product.class));
     }
 
     @Test
     void testUpdateProductForbiddenWhenNotOwner() throws Exception {
-        product1.setJastiperId("different-jastiper");
-
-        when(productService.findById("123-abc"))
-                .thenReturn(Optional.of(product1));
+        when(updateProductUseCase.execute(anyString(), anyString(), any(Product.class)))
+                .thenThrow(new ResponseStatusException(
+                        HttpStatus.FORBIDDEN,
+                        "Only the product owner can update this product"
+                ));
 
         String jsonRequest = """
                 {
@@ -253,12 +255,9 @@ class ProductControllerTest {
 
     @Test
     void testUpdateProductWithImages() throws Exception {
-        product1.setImageUrls(Arrays.asList("http://img.com/1.jpg"));
+        product1.setImageUrls(Arrays.asList("http://img.com/new.jpg"));
 
-        when(productService.findById("123-abc"))
-                .thenReturn(Optional.of(product1));
-
-        when(productService.save(any(Product.class)))
+        when(updateProductUseCase.execute(anyString(), anyString(), any(Product.class)))
                 .thenReturn(product1);
 
         String jsonRequest = """
@@ -274,45 +273,43 @@ class ProductControllerTest {
                         .header(HttpHeaders.AUTHORIZATION, AUTH_HEADER)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonRequest))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.imageUrls[0]").value("http://img.com/new.jpg"));
 
-        verify(productService).save(argThat(product ->
-                product.getImageUrls().contains("http://img.com/new.jpg")
-        ));
+        verify(updateProductUseCase)
+                .execute(anyString(), anyString(), any(Product.class));
     }
 
     @Test
     void testDeleteProduct() throws Exception {
-        when(productService.findById("123-abc"))
-                .thenReturn(Optional.of(product1));
-
         mockMvc.perform(delete("/api/products/123-abc")
                         .header(HttpHeaders.AUTHORIZATION, AUTH_HEADER))
                 .andExpect(status().isOk());
 
-        verify(authClient).getCurrentJastiperId(AUTH_HEADER);
-        verify(productService, times(1)).deleteById("123-abc");
+        verify(deleteProductUseCase, times(1))
+                .execute("123-abc", AUTH_HEADER);
     }
 
     @Test
     void testDeleteProductNotFound() throws Exception {
-        when(productService.findById("id-ngasal"))
-                .thenReturn(Optional.empty());
+        doThrow(new ResponseStatusException(
+                HttpStatus.NOT_FOUND,
+                "Product not found"
+        )).when(deleteProductUseCase).execute("id-ngasal", AUTH_HEADER);
 
         mockMvc.perform(delete("/api/products/id-ngasal")
                         .header(HttpHeaders.AUTHORIZATION, AUTH_HEADER))
                 .andExpect(status().isNotFound());
 
-        verify(authClient, never()).getCurrentJastiperId(anyString());
         verify(productService, never()).deleteById(anyString());
     }
 
     @Test
     void testDeleteProductForbiddenWhenNotOwner() throws Exception {
-        product1.setJastiperId("different-jastiper");
-
-        when(productService.findById("123-abc"))
-                .thenReturn(Optional.of(product1));
+        doThrow(new ResponseStatusException(
+                HttpStatus.FORBIDDEN,
+                "Only the product owner can delete this product"
+        )).when(deleteProductUseCase).execute("123-abc", AUTH_HEADER);
 
         mockMvc.perform(delete("/api/products/123-abc")
                         .header(HttpHeaders.AUTHORIZATION, AUTH_HEADER))
