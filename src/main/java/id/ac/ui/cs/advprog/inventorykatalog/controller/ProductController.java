@@ -2,8 +2,11 @@ package id.ac.ui.cs.advprog.inventorykatalog.controller;
 
 import id.ac.ui.cs.advprog.inventorykatalog.model.Product;
 import id.ac.ui.cs.advprog.inventorykatalog.service.ProductService;
+import id.ac.ui.cs.advprog.inventorykatalog.usecase.CreateProductUseCase;
+import id.ac.ui.cs.advprog.inventorykatalog.usecase.DeleteProductUseCase;
+import id.ac.ui.cs.advprog.inventorykatalog.usecase.GetMyProductsUseCase;
+import id.ac.ui.cs.advprog.inventorykatalog.usecase.UpdateProductUseCase;
 import jakarta.annotation.PostConstruct;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,8 +19,25 @@ import java.util.Optional;
 @RequestMapping("/api/products")
 public class ProductController {
 
-    @Autowired
-    private ProductService productService;
+    private final ProductService productService;
+    private final CreateProductUseCase createProductUseCase;
+    private final UpdateProductUseCase updateProductUseCase;
+    private final DeleteProductUseCase deleteProductUseCase;
+    private final GetMyProductsUseCase getMyProductsUseCase;
+
+    public ProductController(
+            ProductService productService,
+            CreateProductUseCase createProductUseCase,
+            UpdateProductUseCase updateProductUseCase,
+            DeleteProductUseCase deleteProductUseCase,
+            GetMyProductsUseCase getMyProductsUseCase
+    ) {
+        this.productService = productService;
+        this.createProductUseCase = createProductUseCase;
+        this.updateProductUseCase = updateProductUseCase;
+        this.deleteProductUseCase = deleteProductUseCase;
+        this.getMyProductsUseCase = getMyProductsUseCase;
+    }
 
     @PostConstruct
     public void initDummyData() {
@@ -32,6 +52,7 @@ public class ProductController {
                     .tanggalKembali(LocalDate.of(2026, 5, 15))
                     .jastiperId("jastiper-001")
                     .build();
+
             productService.save(barang1);
         }
     }
@@ -42,45 +63,53 @@ public class ProductController {
     }
 
     @PostMapping
-    public ResponseEntity<Product> createProduct(@RequestBody Product product) {
-        Product savedProduct = productService.save(product);
+    public ResponseEntity<Product> createProduct(
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
+            @RequestBody Product product
+    ) {
+        Product savedProduct = createProductUseCase.execute(authorizationHeader, product);
+
         return ResponseEntity.ok(savedProduct);
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<Product> updateProduct(@PathVariable String id, @RequestBody Product productDetails) {
-        Optional<Product> optionalProduct = productService.findById(id);
-        if (optionalProduct.isPresent()) {
-            Product product = optionalProduct.get();
-            product.setNama(productDetails.getNama());
-            product.setDeskripsi(productDetails.getDeskripsi());
-            product.setHarga(productDetails.getHarga());
-            product.setStok(productDetails.getStok());
-            product.setNegaraAsal(productDetails.getNegaraAsal());
-            product.setTanggalPembelian(productDetails.getTanggalPembelian());
-            product.setTanggalKembali(productDetails.getTanggalKembali());
-            product.setImageUrls(productDetails.getImageUrls());
+    @GetMapping("/me")
+    public ResponseEntity<List<Product>> getMyProducts(
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader
+    ) {
+        List<Product> products = getMyProductsUseCase.execute(authorizationHeader);
 
-            Product updatedProduct = productService.save(product);
-            return ResponseEntity.ok(updatedProduct);
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(products);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Product> updateProduct(
+            @PathVariable String id,
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
+            @RequestBody Product productDetails
+    ) {
+        Product updatedProduct = updateProductUseCase.execute(
+                id,
+                authorizationHeader,
+                productDetails
+        );
+
+        return ResponseEntity.ok(updatedProduct);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteProduct(@PathVariable String id) {
-        if (productService.existsById(id)) {
-            productService.deleteById(id);
-            return ResponseEntity.ok().build();
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+    public ResponseEntity<Void> deleteProduct(
+            @PathVariable String id,
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader
+    ) {
+        deleteProductUseCase.execute(id, authorizationHeader);
+
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Product> getProductById(@PathVariable String id) {
         Optional<Product> product = productService.findById(id);
+
         return product.map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
@@ -93,5 +122,14 @@ public class ProductController {
     @GetMapping("/search/jastiper")
     public ResponseEntity<List<Product>> getByJastiper(@RequestParam String jastiperId) {
         return ResponseEntity.ok(productService.findByJastiperId(jastiperId));
+    }
+
+    @PatchMapping("/{id}/stock/reduce")
+    public ResponseEntity<Product> reduceStock(
+            @PathVariable String id,
+            @RequestParam int quantity
+    ) {
+        Product updatedProduct = productService.reduceStock(id, quantity);
+        return ResponseEntity.ok(updatedProduct);
     }
 }
