@@ -14,4 +14,5 @@ public interface ProductService {
     List<Product> findByJastiperId(String jastiperId);
     long count();
     void deleteAll();
+    Product reduceStock(String id, int quantity);
 }

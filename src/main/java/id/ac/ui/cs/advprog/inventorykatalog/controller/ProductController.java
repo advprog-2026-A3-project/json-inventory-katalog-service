@@ -123,4 +123,13 @@ public class ProductController {
     public ResponseEntity<List<Product>> getByJastiper(@RequestParam String jastiperId) {
         return ResponseEntity.ok(productService.findByJastiperId(jastiperId));
     }
+
+    @PatchMapping("/{id}/stock/reduce")
+    public ResponseEntity<Product> reduceStock(
+            @PathVariable String id,
+            @RequestParam int quantity
+    ) {
+        Product updatedProduct = productService.reduceStock(id, quantity);
+        return ResponseEntity.ok(updatedProduct);
+    }
 }
