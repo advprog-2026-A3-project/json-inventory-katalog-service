@@ -14,4 +14,7 @@ public interface ProductRepository {
     List<Product> findByJastiperId(String jastiperId);
     long count();
     void deleteAll();
+
+    // (Concurrency): update agar stok tidak minus saat banyak checkout bersamaan.
+    int reduceStockIfAvailable(String id, int quantity);
 }
