@@ -96,4 +96,32 @@ public class ProductServiceImpl implements ProductService {
                         "Product not found"
                 ));
     }
+
+    @Override
+    @Transactional
+    public Product addRating(String id, double newRating) {
+        if (newRating < 0.0 || newRating > 5.0) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Rating must be between 0.0 and 5.0"
+            );
+        }
+
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Product not found"
+                ));
+
+        double currentRating = product.getRating() == null ? 0.0 : product.getRating();
+        int currentRatingCount = product.getRatingCount();
+
+        double updatedRating = ((currentRating * currentRatingCount) + newRating)
+                / (currentRatingCount + 1);
+
+        product.setRating(updatedRating);
+        product.setRatingCount(currentRatingCount + 1);
+
+        return productRepository.save(product);
+    }
 }

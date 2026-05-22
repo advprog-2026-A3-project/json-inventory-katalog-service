@@ -29,7 +29,6 @@ public class UpdateProductUseCase {
                         "Product not found"
                 ));
 
-
         AuthProfileResponse currentUser = authClient.getCurrentUserProfile(authorizationHeader);
         authorizationPolicy.validateCanManageProduct(currentUser, product);
 
@@ -41,6 +40,10 @@ public class UpdateProductUseCase {
         product.setTanggalPembelian(productDetails.getTanggalPembelian());
         product.setTanggalKembali(productDetails.getTanggalKembali());
         product.setImageUrls(productDetails.getImageUrls());
+
+        if (productDetails.getRating() != null) {
+            product.setRating(productDetails.getRating());
+        }
 
         return productService.save(product);
     }

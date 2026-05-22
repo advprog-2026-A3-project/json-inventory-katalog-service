@@ -9,6 +9,7 @@ import id.ac.ui.cs.advprog.inventorykatalog.usecase.UpdateProductUseCase;
 import jakarta.annotation.PostConstruct;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import id.ac.ui.cs.advprog.inventorykatalog.dto.ProductRatingRequest;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -130,6 +131,15 @@ public class ProductController {
             @RequestParam int quantity
     ) {
         Product updatedProduct = productService.reduceStock(id, quantity);
+        return ResponseEntity.ok(updatedProduct);
+    }
+
+    @PatchMapping("/{id}/rating")
+    public ResponseEntity<Product> addProductRating(
+            @PathVariable String id,
+            @RequestBody ProductRatingRequest request
+    ) {
+        Product updatedProduct = productService.addRating(id, request.getRating());
         return ResponseEntity.ok(updatedProduct);
     }
 }

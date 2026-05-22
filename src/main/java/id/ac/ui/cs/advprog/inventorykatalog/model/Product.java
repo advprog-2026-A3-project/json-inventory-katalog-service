@@ -31,6 +31,12 @@ public class Product {
     @Column(nullable = false)
     private int stok;
 
+    @Column(nullable = false)
+    private Double rating;
+
+    @Column(nullable = false)
+    private int ratingCount;
+
     private String negaraAsal;
     private LocalDate tanggalPembelian;
     private LocalDate tanggalKembali;
@@ -42,4 +48,32 @@ public class Product {
 
     @Column(nullable = false)
     private String jastiperId;
+
+    @PrePersist
+    public void prePersist() {
+        applyDefaultValues();
+        validateRating();
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+        applyDefaultValues();
+        validateRating();
+    }
+
+    private void applyDefaultValues() {
+        if (rating == null) {
+            rating = 0.0;
+        }
+
+        if (ratingCount < 0) {
+            ratingCount = 0;
+        }
+    }
+
+    private void validateRating() {
+        if (rating < 0.0 || rating > 5.0) {
+            throw new IllegalArgumentException("Rating must be between 0.0 and 5.0");
+        }
+    }
 }
