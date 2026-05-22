@@ -66,7 +66,7 @@ class UpdateProductUseCaseTest {
 
         assertSame(existingProduct, result);
         assertUpdatedFields(existingProduct);
-        assertEquals("owner-1", existingProduct.getJastiperId());
+        assertEquals("1", existingProduct.getJastiperId());
         assertEquals("p1", existingProduct.getId());
         verify(productService).save(existingProduct);
     }
