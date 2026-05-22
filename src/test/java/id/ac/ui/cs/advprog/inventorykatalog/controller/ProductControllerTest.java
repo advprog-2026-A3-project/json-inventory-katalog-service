@@ -1,6 +1,7 @@
 package id.ac.ui.cs.advprog.inventorykatalog.controller;
 
 import id.ac.ui.cs.advprog.inventorykatalog.model.Product;
+import id.ac.ui.cs.advprog.inventorykatalog.model.ProductType;
 import id.ac.ui.cs.advprog.inventorykatalog.service.ProductService;
 import id.ac.ui.cs.advprog.inventorykatalog.usecase.CreateProductUseCase;
 import id.ac.ui.cs.advprog.inventorykatalog.usecase.DeleteProductUseCase;
@@ -80,6 +81,8 @@ class ProductControllerTest {
         product1.setStok(20);
         product1.setRating(0.0);
         product1.setRatingCount(0);
+        product1.setProductType(ProductType.REGULAR);
+        product1.setMaxQuantityPerCheckout(0);
         product1.setNegaraAsal("Jepang");
         product1.setJastiperId(JASTIPER_ID);
     }
@@ -93,7 +96,9 @@ class ProductControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].nama").value("KitKat Matcha Jepang"))
                 .andExpect(jsonPath("$[0].rating").value(0.0))
-                .andExpect(jsonPath("$[0].ratingCount").value(0));
+                .andExpect(jsonPath("$[0].ratingCount").value(0))
+                .andExpect(jsonPath("$[0].productType").value("regular"))
+                .andExpect(jsonPath("$[0].maxQuantityPerCheckout").value(0));
     }
 
     @Test
@@ -109,6 +114,10 @@ class ProductControllerTest {
                   "stok": 20,
                   "rating": 0.0,
                   "ratingCount": 0,
+                  "productType": "regular",
+                  "warStartTime": null,
+                  "warEndTime": null,
+                  "maxQuantityPerCheckout": 0,
                   "negaraAsal": "Jepang",
                   "imageUrls": []
                 }
@@ -121,7 +130,9 @@ class ProductControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.nama").value("KitKat Matcha Jepang"))
                 .andExpect(jsonPath("$.rating").value(0.0))
-                .andExpect(jsonPath("$.ratingCount").value(0));
+                .andExpect(jsonPath("$.ratingCount").value(0))
+                .andExpect(jsonPath("$.productType").value("regular"))
+                .andExpect(jsonPath("$.maxQuantityPerCheckout").value(0));
 
         verify(createProductUseCase).execute(anyString(), any(Product.class));
     }
@@ -141,6 +152,10 @@ class ProductControllerTest {
                   "stok": 5,
                   "rating": 0.0,
                   "ratingCount": 0,
+                  "productType": "regular",
+                  "warStartTime": null,
+                  "warEndTime": null,
+                  "maxQuantityPerCheckout": 0,
                   "negaraAsal": "Indonesia",
                   "imageUrls": []
                 }
@@ -165,7 +180,9 @@ class ProductControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].nama").value("KitKat Matcha Jepang"))
                 .andExpect(jsonPath("$[0].rating").value(0.0))
-                .andExpect(jsonPath("$[0].ratingCount").value(0));
+                .andExpect(jsonPath("$[0].ratingCount").value(0))
+                .andExpect(jsonPath("$[0].productType").value("regular"))
+                .andExpect(jsonPath("$[0].maxQuantityPerCheckout").value(0));
 
         verify(getMyProductsUseCase).execute(AUTH_HEADER);
     }
@@ -179,7 +196,9 @@ class ProductControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.nama").value("KitKat Matcha Jepang"))
                 .andExpect(jsonPath("$.rating").value(0.0))
-                .andExpect(jsonPath("$.ratingCount").value(0));
+                .andExpect(jsonPath("$.ratingCount").value(0))
+                .andExpect(jsonPath("$.productType").value("regular"))
+                .andExpect(jsonPath("$.maxQuantityPerCheckout").value(0));
     }
 
     @Test
@@ -204,6 +223,10 @@ class ProductControllerTest {
                   "stok": 30,
                   "rating": 0.0,
                   "ratingCount": 0,
+                  "productType": "regular",
+                  "warStartTime": null,
+                  "warEndTime": null,
+                  "maxQuantityPerCheckout": 0,
                   "negaraAsal": "Jepang",
                   "imageUrls": []
                 }
@@ -215,7 +238,9 @@ class ProductControllerTest {
                         .content(jsonRequest))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.rating").value(0.0))
-                .andExpect(jsonPath("$.ratingCount").value(0));
+                .andExpect(jsonPath("$.ratingCount").value(0))
+                .andExpect(jsonPath("$.productType").value("regular"))
+                .andExpect(jsonPath("$.maxQuantityPerCheckout").value(0));
 
         verify(updateProductUseCase)
                 .execute(anyString(), anyString(), any(Product.class));
@@ -236,6 +261,10 @@ class ProductControllerTest {
                   "stok": 0,
                   "rating": 0.0,
                   "ratingCount": 0,
+                  "productType": "regular",
+                  "warStartTime": null,
+                  "warEndTime": null,
+                  "maxQuantityPerCheckout": 0,
                   "imageUrls": []
                 }
                 """;
@@ -264,6 +293,10 @@ class ProductControllerTest {
                   "stok": 30,
                   "rating": 0.0,
                   "ratingCount": 0,
+                  "productType": "regular",
+                  "warStartTime": null,
+                  "warEndTime": null,
+                  "maxQuantityPerCheckout": 0,
                   "imageUrls": []
                 }
                 """;
@@ -291,6 +324,10 @@ class ProductControllerTest {
                   "stok": 30,
                   "rating": 0.0,
                   "ratingCount": 0,
+                  "productType": "regular",
+                  "warStartTime": null,
+                  "warEndTime": null,
+                  "maxQuantityPerCheckout": 0,
                   "imageUrls": ["http://img.com/new.jpg"]
                 }
                 """;
@@ -302,7 +339,9 @@ class ProductControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.imageUrls[0]").value("http://img.com/new.jpg"))
                 .andExpect(jsonPath("$.rating").value(0.0))
-                .andExpect(jsonPath("$.ratingCount").value(0));
+                .andExpect(jsonPath("$.ratingCount").value(0))
+                .andExpect(jsonPath("$.productType").value("regular"))
+                .andExpect(jsonPath("$.maxQuantityPerCheckout").value(0));
 
         verify(updateProductUseCase)
                 .execute(anyString(), anyString(), any(Product.class));
@@ -356,7 +395,9 @@ class ProductControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].nama").value("KitKat Matcha Jepang"))
                 .andExpect(jsonPath("$[0].rating").value(0.0))
-                .andExpect(jsonPath("$[0].ratingCount").value(0));
+                .andExpect(jsonPath("$[0].ratingCount").value(0))
+                .andExpect(jsonPath("$[0].productType").value("regular"))
+                .andExpect(jsonPath("$[0].maxQuantityPerCheckout").value(0));
     }
 
     @Test
@@ -369,7 +410,9 @@ class ProductControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].nama").value("KitKat Matcha Jepang"))
                 .andExpect(jsonPath("$[0].rating").value(0.0))
-                .andExpect(jsonPath("$[0].ratingCount").value(0));
+                .andExpect(jsonPath("$[0].ratingCount").value(0))
+                .andExpect(jsonPath("$[0].productType").value("regular"))
+                .andExpect(jsonPath("$[0].maxQuantityPerCheckout").value(0));
     }
 
     @Test

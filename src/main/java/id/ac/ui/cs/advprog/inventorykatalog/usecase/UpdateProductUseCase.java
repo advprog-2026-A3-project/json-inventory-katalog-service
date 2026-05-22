@@ -41,9 +41,10 @@ public class UpdateProductUseCase {
         product.setTanggalKembali(productDetails.getTanggalKembali());
         product.setImageUrls(productDetails.getImageUrls());
 
-        if (productDetails.getRating() != null) {
-            product.setRating(productDetails.getRating());
-        }
+        product.setProductType(productDetails.getProductType());
+        product.setWarStartTime(productDetails.getWarStartTime());
+        product.setWarEndTime(productDetails.getWarEndTime());
+        product.setMaxQuantityPerCheckout(productDetails.getMaxQuantityPerCheckout());
 
         return productService.save(product);
     }
