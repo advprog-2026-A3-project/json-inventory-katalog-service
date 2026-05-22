@@ -42,7 +42,7 @@ public class ProductRepositoryImpl implements ProductRepository {
     public void deleteById(String id) {
         Product product = entityManager.find(Product.class, id);
         if (product != null) {
-            entityManager.remove(product); // Hapus data
+            entityManager.remove(product);
         }
     }
 
@@ -76,5 +76,22 @@ public class ProductRepositoryImpl implements ProductRepository {
     @Override
     public void deleteAll() {
         entityManager.createQuery("DELETE FROM Product").executeUpdate();
+    }
+
+    @Override
+    public int reduceStockIfAvailable(String id, int quantity) {
+        int updatedRows = entityManager.createQuery("""
+                        UPDATE Product p
+                        SET p.stok = p.stok - :quantity
+                        WHERE p.id = :id
+                          AND p.stok >= :quantity
+                        """)
+                .setParameter("id", id)
+                .setParameter("quantity", quantity)
+                .executeUpdate();
+
+        entityManager.clear();
+
+        return updatedRows;
     }
 }

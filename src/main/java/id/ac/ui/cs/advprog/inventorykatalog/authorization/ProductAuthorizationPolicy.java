@@ -11,6 +11,7 @@ public final class ProductAuthorizationPolicy {
 
     private static final ProductAuthorizationPolicy INSTANCE = new ProductAuthorizationPolicy();
     private static final String JASTIPER_ROLE = "JASTIPER";
+    private static final String ADMIN_ROLE = "ADMIN";
 
     private ProductAuthorizationPolicy() {
     }
@@ -27,13 +28,28 @@ public final class ProductAuthorizationPolicy {
         return profile.getId().toString();
     }
 
-    public void validateOwner(String currentJastiperId, Product product) {
-        if (product == null) {
-            throw new ResponseStatusException(
-                    HttpStatus.NOT_FOUND,
-                    "Product not found"
-            );
+    public void validateCanManageProduct(AuthProfileResponse profile, Product product) {
+        validateAuthenticatedProfile(profile);
+        validateActiveAccount(profile);
+        validateExistingProduct(product);
+
+        if (hasRole(profile, ADMIN_ROLE)) {
+            return;
         }
+
+        if (hasRole(profile, JASTIPER_ROLE)
+                && Objects.equals(profile.getId().toString(), product.getJastiperId())) {
+            return;
+        }
+
+        throw new ResponseStatusException(
+                HttpStatus.FORBIDDEN,
+                "Only ADMIN or the product owner can manage this product"
+        );
+    }
+
+    public void validateOwner(String currentJastiperId, Product product) {
+        validateExistingProduct(product);
 
         if (!Objects.equals(currentJastiperId, product.getJastiperId())) {
             throw new ResponseStatusException(
@@ -62,11 +78,24 @@ public final class ProductAuthorizationPolicy {
     }
 
     private void validateJastiperRole(AuthProfileResponse profile) {
-        if (!JASTIPER_ROLE.equals(profile.getRole())) {
+        if (!hasRole(profile, JASTIPER_ROLE)) {
             throw new ResponseStatusException(
                     HttpStatus.FORBIDDEN,
                     "Only JASTIPER can manage products"
             );
         }
+    }
+
+    private void validateExistingProduct(Product product) {
+        if (product == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "Product not found"
+            );
+        }
+    }
+
+    private boolean hasRole(AuthProfileResponse profile, String expectedRole) {
+        return expectedRole.equalsIgnoreCase(profile.getRole());
     }
 }

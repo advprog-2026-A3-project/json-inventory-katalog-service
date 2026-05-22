@@ -1,6 +1,8 @@
 package id.ac.ui.cs.advprog.inventorykatalog.usecase;
 
+import id.ac.ui.cs.advprog.inventorykatalog.authorization.ProductAuthorizationPolicy;
 import id.ac.ui.cs.advprog.inventorykatalog.client.AuthClient;
+import id.ac.ui.cs.advprog.inventorykatalog.client.AuthProfileResponse;
 import id.ac.ui.cs.advprog.inventorykatalog.model.Product;
 import id.ac.ui.cs.advprog.inventorykatalog.service.ProductService;
 import org.springframework.http.HttpStatus;
@@ -12,6 +14,8 @@ public class UpdateProductUseCase {
 
     private final ProductService productService;
     private final AuthClient authClient;
+    private final ProductAuthorizationPolicy authorizationPolicy =
+            ProductAuthorizationPolicy.getInstance();
 
     public UpdateProductUseCase(ProductService productService, AuthClient authClient) {
         this.productService = productService;
@@ -25,14 +29,8 @@ public class UpdateProductUseCase {
                         "Product not found"
                 ));
 
-        String currentJastiperId = authClient.getCurrentJastiperId(authorizationHeader);
-
-        if (!currentJastiperId.equals(product.getJastiperId())) {
-            throw new ResponseStatusException(
-                    HttpStatus.FORBIDDEN,
-                    "Only the product owner can update this product"
-            );
-        }
+        AuthProfileResponse currentUser = authClient.getCurrentUserProfile(authorizationHeader);
+        authorizationPolicy.validateCanManageProduct(currentUser, product);
 
         product.setNama(productDetails.getNama());
         product.setDeskripsi(productDetails.getDeskripsi());
@@ -42,6 +40,10 @@ public class UpdateProductUseCase {
         product.setTanggalPembelian(productDetails.getTanggalPembelian());
         product.setTanggalKembali(productDetails.getTanggalKembali());
         product.setImageUrls(productDetails.getImageUrls());
+
+        if (productDetails.getRating() != null) {
+            product.setRating(productDetails.getRating());
+        }
 
         return productService.save(product);
     }
