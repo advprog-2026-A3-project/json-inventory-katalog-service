@@ -24,6 +24,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import static org.mockito.ArgumentMatchers.eq;
+import id.ac.ui.cs.advprog.inventorykatalog.dto.ProductRequest;
 
 @ExtendWith(MockitoExtension.class)
 class ProductControllerTest {
@@ -90,14 +92,24 @@ class ProductControllerTest {
 
     @Test
     void createProductShouldUseCreateUseCase() {
-        Product input = new Product();
-        Product saved = new Product();
-        when(createProductUseCase.execute("Bearer token", input)).thenReturn(saved);
+        ProductRequest request = new ProductRequest();
+        request.setNama("KitKat");
+        request.setHarga(10000);
+        request.setStok(5);
 
-        ResponseEntity<?> response = controller.createProduct("Bearer token", input);
+        Product saved = new Product();
+        when(createProductUseCase.execute(eq("Bearer token"), any(Product.class))).thenReturn(saved);
+
+        ResponseEntity<?> response = controller.createProduct("Bearer token", request);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertSame(saved, response.getBody());
+
+        ArgumentCaptor<Product> captor = ArgumentCaptor.forClass(Product.class);
+        verify(createProductUseCase).execute(eq("Bearer token"), captor.capture());
+        assertEquals("KitKat", captor.getValue().getNama());
+        assertEquals(10000, captor.getValue().getHarga());
+        assertEquals(5, captor.getValue().getStok());
     }
 
     @Test
@@ -113,14 +125,24 @@ class ProductControllerTest {
 
     @Test
     void updateProductShouldUseUpdateUseCase() {
-        Product details = new Product();
-        Product updated = new Product();
-        when(updateProductUseCase.execute("p1", "Bearer token", details)).thenReturn(updated);
+        ProductRequest request = new ProductRequest();
+        request.setNama("Updated Product");
+        request.setHarga(15000);
+        request.setStok(10);
 
-        ResponseEntity<?> response = controller.updateProduct("p1", "Bearer token", details);
+        Product updated = new Product();
+        when(updateProductUseCase.execute(eq("p1"), eq("Bearer token"), any(Product.class))).thenReturn(updated);
+
+        ResponseEntity<?> response = controller.updateProduct("p1", "Bearer token", request.toProduct());
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertSame(updated, response.getBody());
+
+        ArgumentCaptor<Product> captor = ArgumentCaptor.forClass(Product.class);
+        verify(updateProductUseCase).execute(eq("p1"), eq("Bearer token"), captor.capture());
+        assertEquals("Updated Product", captor.getValue().getNama());
+        assertEquals(15000, captor.getValue().getHarga());
+        assertEquals(10, captor.getValue().getStok());
     }
 
     @Test

@@ -10,6 +10,7 @@ import jakarta.annotation.PostConstruct;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import id.ac.ui.cs.advprog.inventorykatalog.dto.ProductRatingRequest;
+import id.ac.ui.cs.advprog.inventorykatalog.dto.ProductRequest;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -66,10 +67,12 @@ public class ProductController {
     @PostMapping
     public ResponseEntity<Product> createProduct(
             @RequestHeader(value = "Authorization", required = false) String authorizationHeader,
-            @RequestBody Product product
+            @RequestBody ProductRequest productRequest
     ) {
-        Product savedProduct = createProductUseCase.execute(authorizationHeader, product);
-
+        Product savedProduct = createProductUseCase.execute(
+                authorizationHeader,
+                productRequest.toProduct()
+        );
         return ResponseEntity.ok(savedProduct);
     }
 

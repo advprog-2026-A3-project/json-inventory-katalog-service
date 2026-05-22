@@ -1,0 +1,11 @@
+timeStamp,elapsed,label,responseCode,responseMessage,threadName,dataType,success,failureMessage,bytes,sentBytes,grpThreads,allThreads,URL,Latency,IdleTime,Connect
+1779458920924,2790,GET /api/products,200,,Thread Group - 5 users x 2 loops 1-1,text,true,,2954,154,4,4,http://3.219.224.138/api/products,2779,0,305
+1779458921625,2805,GET /api/products,200,,Thread Group - 5 users x 2 loops 1-2,text,true,,2954,154,4,4,http://3.219.224.138/api/products,2805,0,249
+1779458922633,2697,GET /api/products,200,,Thread Group - 5 users x 2 loops 1-3,text,true,,2954,154,5,5,http://3.219.224.138/api/products,2696,0,245
+1779458923718,2242,GET /api/products,200,,Thread Group - 5 users x 2 loops 1-1,text,true,,2954,154,5,5,http://3.219.224.138/api/products,2242,0,0
+1779458923629,2918,GET /api/products,200,,Thread Group - 5 users x 2 loops 1-4,text,true,,2954,154,4,4,http://3.219.224.138/api/products,2918,0,249
+1779458924431,2268,GET /api/products,200,,Thread Group - 5 users x 2 loops 1-2,text,true,,2954,154,4,4,http://3.219.224.138/api/products,2268,0,0
+1779458924634,2827,GET /api/products,200,,Thread Group - 5 users x 2 loops 1-5,text,true,,2954,154,3,3,http://3.219.224.138/api/products,2827,0,253
+1779458925330,2166,GET /api/products,200,,Thread Group - 5 users x 2 loops 1-3,text,true,,2954,154,3,3,http://3.219.224.138/api/products,2166,0,0
+1779458926549,2464,GET /api/products,200,,Thread Group - 5 users x 2 loops 1-4,text,true,,2954,154,2,2,http://3.219.224.138/api/products,2464,0,0
+1779458927464,2180,GET /api/products,200,,Thread Group - 5 users x 2 loops 1-5,text,true,,2954,154,1,1,http://3.219.224.138/api/products,2180,0,0
