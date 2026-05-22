@@ -22,6 +22,9 @@
     .btn-primary { background-color: var(--primary-color); border: none; }
     .btn-primary:hover { background-color: var(--secondary-color); }
     .badge-id { font-family: monospace; font-size: 0.75rem; background: #e9ecef; color: #495057; padding: 4px 8px; border-radius: 4px; }
+    .badge-limited { background: #dc3545; }
+    .badge-regular { background: #198754; }
+    .small-muted { font-size: 0.8rem; color: #6c757d; }
   </style>
 </head>
 <body>
@@ -58,7 +61,8 @@
         <tr>
           <th>Gambar</th>
           <th>Info Produk</th>
-          <th>Harga & Stok</th>
+          <th>Harga, Stok & Rating</th>
+          <th>War / Limited</th>
           <th>Asal & Jastiper</th>
           <th class="text-center">Aksi</th>
         </tr>
@@ -101,6 +105,34 @@
               <label class="form-label fw-semibold">ID Jastiper</label>
               <input type="text" id="formJastiper" class="form-control" required>
             </div>
+
+            <!-- BARU(War): Pilihan jenis produk regular / limited -->
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Tipe Produk</label>
+              <select id="formProductType" class="form-select">
+                <option value="regular">Regular</option>
+                <option value="limited">Limited / War</option>
+              </select>
+            </div>
+
+            <!-- BARU(War): Batas quantity per checkout -->
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Max Quantity per Checkout</label>
+              <input type="number" id="formMaxQuantityPerCheckout" class="form-control" min="0" value="0">
+              <div class="form-text">Isi 0 untuk produk regular tanpa batas khusus.</div>
+            </div>
+
+            <!-- BARU(War): Waktu mulai dan selesai war -->
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">War Start Time</label>
+              <input type="datetime-local" id="formWarStartTime" class="form-control">
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">War End Time</label>
+              <input type="datetime-local" id="formWarEndTime" class="form-control">
+            </div>
+
             <div class="col-md-12">
               <label class="form-label fw-semibold">URL Gambar (Pisahkan dengan koma)</label>
               <textarea id="formGambar" class="form-control" rows="2" placeholder="https://image1.jpg, https://image2.jpg"></textarea>
@@ -126,6 +158,26 @@
 
   document.addEventListener('DOMContentLoaded', fetchProducts);
 
+  function formatDateTimeForInput(value) {
+    if (!value) return '';
+    return value.length >= 16 ? value.substring(0, 16) : value;
+  }
+
+  function normalizeDateTimeForApi(value) {
+    if (!value) return null;
+    return value.length === 16 ? `${value}:00` : value;
+  }
+
+  function normalizeProductType(value) {
+    if (!value) return 'regular';
+    return String(value).toLowerCase();
+  }
+
+  function formatDateTimeDisplay(value) {
+    if (!value) return '-';
+    return value.replace('T', ' ').substring(0, 16);
+  }
+
   async function fetchProducts() {
     try {
       const res = await fetch(API_URL);
@@ -139,6 +191,9 @@
     tbody.innerHTML = '';
     data.forEach(p => {
       const firstImg = (p.imageUrls && p.imageUrls.length > 0) ? p.imageUrls[0] : 'https://via.placeholder.com/50';
+      const productType = normalizeProductType(p.productType);
+      const typeBadgeClass = productType === 'limited' ? 'badge-limited' : 'badge-regular';
+
       tbody.innerHTML += `
                 <tr>
                     <td><img src="${firstImg}" class="img-preview-sm" onerror="this.src='https://via.placeholder.com/50'"></td>
@@ -147,8 +202,17 @@
                         <div class="badge-id">${p.id}</div>
                     </td>
                     <td>
-                        <div class="text-primary fw-bold">Rp ${p.harga.toLocaleString()}</div>
+                        <div class="text-primary fw-bold">Rp ${Number(p.harga || 0).toLocaleString()}</div>
                         <div class="small text-muted">Stok: ${p.stok}</div>
+                        <div class="small text-warning">
+                          <i class="fas fa-star"></i> Rating: ${p.rating ?? 0} (${p.ratingCount ?? 0})
+                        </div>
+                    </td>
+                    <td>
+                        <span class="badge ${typeBadgeClass}">${productType}</span>
+                        <div class="small-muted mt-1">Mulai: ${formatDateTimeDisplay(p.warStartTime)}</div>
+                        <div class="small-muted">Selesai: ${formatDateTimeDisplay(p.warEndTime)}</div>
+                        <div class="small-muted">Max checkout: ${p.maxQuantityPerCheckout ?? 0}</div>
                     </td>
                     <td>
                         <div class="small"><i class="fas fa-map-marker-alt text-danger me-1"></i> ${p.negaraAsal || '-'}</div>
@@ -169,7 +233,6 @@
     const keyword = document.getElementById('globalSearch').value;
     if(keyword.length < 1) return fetchProducts();
 
-    // Coba cari berdasarkan nama dulu
     const res = await fetch(`${API_URL}/search/nama?nama=${keyword}`);
     const data = await res.json();
     renderTable(data);
@@ -178,25 +241,54 @@
   async function openModal(mode, id = null) {
     currentMode = mode;
     document.getElementById('apiForm').reset();
-    document.getElementById('modalTitle').innerText = mode === 'add' ? 'Tambah Data (POST /api/products)' : 'Edit Data (PUT /api/products/{id})';
+    document.getElementById('formProductType').value = 'regular';
+    document.getElementById('formMaxQuantityPerCheckout').value = 0;
+
+    document.getElementById('modalTitle').innerText =
+            mode === 'add' ? 'Tambah Data (POST /api/products)' : 'Edit Data (PUT /api/products/{id})';
 
     if(mode === 'edit' && id) {
       const res = await fetch(`${API_URL}/${id}`);
       const p = await res.json();
+
       document.getElementById('formId').value = p.id;
       document.getElementById('formNama').value = p.nama;
       document.getElementById('formHarga').value = p.harga;
       document.getElementById('formStok').value = p.stok;
-      document.getElementById('formAsal').value = p.negaraAsal;
-      document.getElementById('formJastiper').value = p.jastiperId;
-      document.getElementById('formDeskripsi').value = p.deskripsi;
+      document.getElementById('formAsal').value = p.negaraAsal || '';
+      document.getElementById('formJastiper').value = p.jastiperId || '';
+      document.getElementById('formDeskripsi').value = p.deskripsi || '';
       document.getElementById('formGambar').value = p.imageUrls ? p.imageUrls.join(', ') : '';
+
+      // BARU(War): Isi field war saat edit.
+      document.getElementById('formProductType').value = normalizeProductType(p.productType);
+      document.getElementById('formWarStartTime').value = formatDateTimeForInput(p.warStartTime);
+      document.getElementById('formWarEndTime').value = formatDateTimeForInput(p.warEndTime);
+      document.getElementById('formMaxQuantityPerCheckout').value = p.maxQuantityPerCheckout ?? 0;
     }
     formModal.show();
   }
 
   document.getElementById('apiForm').addEventListener('submit', async (e) => {
     e.preventDefault();
+
+    const productType = document.getElementById('formProductType').value;
+    const warStartTime = normalizeDateTimeForApi(document.getElementById('formWarStartTime').value);
+    const warEndTime = normalizeDateTimeForApi(document.getElementById('formWarEndTime').value);
+    const maxQuantityPerCheckout = parseInt(document.getElementById('formMaxQuantityPerCheckout').value || '0');
+
+    if (productType === 'limited') {
+      if (!warStartTime || !warEndTime) {
+        alert("Produk limited wajib punya War Start Time dan War End Time.");
+        return;
+      }
+
+      if (maxQuantityPerCheckout < 1) {
+        alert("Produk limited wajib punya Max Quantity per Checkout minimal 1.");
+        return;
+      }
+    }
+
     const payload = {
       nama: document.getElementById('formNama').value,
       harga: parseFloat(document.getElementById('formHarga').value),
@@ -204,7 +296,13 @@
       negaraAsal: document.getElementById('formAsal').value,
       jastiperId: document.getElementById('formJastiper').value,
       deskripsi: document.getElementById('formDeskripsi').value,
-      imageUrls: document.getElementById('formGambar').value.split(',').map(s=>s.trim()).filter(s=>s!=='')
+      imageUrls: document.getElementById('formGambar').value.split(',').map(s=>s.trim()).filter(s=>s!==''),
+
+      // BARU(War): Kirim field product type dan konfigurasi war.
+      productType: productType,
+      warStartTime: warStartTime,
+      warEndTime: warEndTime,
+      maxQuantityPerCheckout: maxQuantityPerCheckout
     };
 
     const url = currentMode === 'add' ? API_URL : `${API_URL}/${document.getElementById('formId').value}`;
@@ -219,7 +317,11 @@
     if(response.ok) {
       formModal.hide();
       fetchProducts();
-    } else { alert("API Error! Cek Log Console."); }
+    } else {
+      const errorText = await response.text();
+      console.error("API Error:", errorText);
+      alert("API Error! Cek Log Console.");
+    }
   });
 
   async function deleteData(id) {
