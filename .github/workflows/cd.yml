@@ -40,7 +40,26 @@ jobs:
             git checkout main
             git pull origin main
 
+            # ---- FIX: free up disk space on EC2 before docker build ----
+            echo "=== Disk usage (before) ==="
+            df -h || true
+
+            echo "=== Docker usage (before) ==="
+            sudo docker system df || true
+
+            # Remove old container if exists
             sudo docker rm -f inventory-katalog || true
+
+            # Prune build cache and unused images/containers/volumes
+            sudo docker builder prune -af || true
+            sudo docker system prune -af --volumes || true
+
+            echo "=== Docker usage (after prune) ==="
+            sudo docker system df || true
+            echo "=== Disk usage (after) ==="
+            df -h || true
+            # -----------------------------------------------------------
+
             sudo docker build -t inventory-katalog .
             sudo docker run -d \
               --name inventory-katalog \
