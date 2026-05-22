@@ -1,6 +1,8 @@
 package id.ac.ui.cs.advprog.inventorykatalog.usecase;
 
+import id.ac.ui.cs.advprog.inventorykatalog.authorization.ProductAuthorizationPolicy;
 import id.ac.ui.cs.advprog.inventorykatalog.client.AuthClient;
+import id.ac.ui.cs.advprog.inventorykatalog.client.AuthProfileResponse;
 import id.ac.ui.cs.advprog.inventorykatalog.model.Product;
 import id.ac.ui.cs.advprog.inventorykatalog.service.ProductService;
 import org.springframework.http.HttpStatus;
@@ -12,6 +14,8 @@ public class DeleteProductUseCase {
 
     private final ProductService productService;
     private final AuthClient authClient;
+    private final ProductAuthorizationPolicy authorizationPolicy =
+            ProductAuthorizationPolicy.getInstance();
 
     public DeleteProductUseCase(ProductService productService, AuthClient authClient) {
         this.productService = productService;
@@ -25,14 +29,8 @@ public class DeleteProductUseCase {
                         "Product not found"
                 ));
 
-        String currentJastiperId = authClient.getCurrentJastiperId(authorizationHeader);
-
-        if (!currentJastiperId.equals(product.getJastiperId())) {
-            throw new ResponseStatusException(
-                    HttpStatus.FORBIDDEN,
-                    "Only the product owner can delete this product"
-            );
-        }
+        AuthProfileResponse currentUser = authClient.getCurrentUserProfile(authorizationHeader);
+        authorizationPolicy.validateCanManageProduct(currentUser, product);
 
         productService.deleteById(id);
     }

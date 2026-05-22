@@ -1,6 +1,7 @@
 package id.ac.ui.cs.advprog.inventorykatalog.controller;
 
 import id.ac.ui.cs.advprog.inventorykatalog.model.Product;
+import id.ac.ui.cs.advprog.inventorykatalog.model.ProductType;
 import id.ac.ui.cs.advprog.inventorykatalog.service.ProductService;
 import id.ac.ui.cs.advprog.inventorykatalog.usecase.CreateProductUseCase;
 import id.ac.ui.cs.advprog.inventorykatalog.usecase.DeleteProductUseCase;
@@ -23,6 +24,7 @@ import java.util.Arrays;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
@@ -31,6 +33,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -76,6 +79,10 @@ class ProductControllerTest {
         product1.setDeskripsi("Cokelat asli dari Akihabara");
         product1.setHarga(55000.0);
         product1.setStok(20);
+        product1.setRating(0.0);
+        product1.setRatingCount(0);
+        product1.setProductType(ProductType.REGULAR);
+        product1.setMaxQuantityPerCheckout(0);
         product1.setNegaraAsal("Jepang");
         product1.setJastiperId(JASTIPER_ID);
     }
@@ -87,7 +94,11 @@ class ProductControllerTest {
 
         mockMvc.perform(get("/api/products"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].nama").value("KitKat Matcha Jepang"));
+                .andExpect(jsonPath("$[0].nama").value("KitKat Matcha Jepang"))
+                .andExpect(jsonPath("$[0].rating").value(0.0))
+                .andExpect(jsonPath("$[0].ratingCount").value(0))
+                .andExpect(jsonPath("$[0].productType").value("regular"))
+                .andExpect(jsonPath("$[0].maxQuantityPerCheckout").value(0));
     }
 
     @Test
@@ -101,6 +112,12 @@ class ProductControllerTest {
                   "deskripsi": "Cokelat asli dari Akihabara",
                   "harga": 55000.0,
                   "stok": 20,
+                  "rating": 0.0,
+                  "ratingCount": 0,
+                  "productType": "regular",
+                  "warStartTime": null,
+                  "warEndTime": null,
+                  "maxQuantityPerCheckout": 0,
                   "negaraAsal": "Jepang",
                   "imageUrls": []
                 }
@@ -111,7 +128,11 @@ class ProductControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonRequest))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.nama").value("KitKat Matcha Jepang"));
+                .andExpect(jsonPath("$.nama").value("KitKat Matcha Jepang"))
+                .andExpect(jsonPath("$.rating").value(0.0))
+                .andExpect(jsonPath("$.ratingCount").value(0))
+                .andExpect(jsonPath("$.productType").value("regular"))
+                .andExpect(jsonPath("$.maxQuantityPerCheckout").value(0));
 
         verify(createProductUseCase).execute(anyString(), any(Product.class));
     }
@@ -129,6 +150,12 @@ class ProductControllerTest {
                   "nama": "Produk Titipers",
                   "harga": 10000.0,
                   "stok": 5,
+                  "rating": 0.0,
+                  "ratingCount": 0,
+                  "productType": "regular",
+                  "warStartTime": null,
+                  "warEndTime": null,
+                  "maxQuantityPerCheckout": 0,
                   "negaraAsal": "Indonesia",
                   "imageUrls": []
                 }
@@ -151,7 +178,11 @@ class ProductControllerTest {
         mockMvc.perform(get("/api/products/me")
                         .header(HttpHeaders.AUTHORIZATION, AUTH_HEADER))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].nama").value("KitKat Matcha Jepang"));
+                .andExpect(jsonPath("$[0].nama").value("KitKat Matcha Jepang"))
+                .andExpect(jsonPath("$[0].rating").value(0.0))
+                .andExpect(jsonPath("$[0].ratingCount").value(0))
+                .andExpect(jsonPath("$[0].productType").value("regular"))
+                .andExpect(jsonPath("$[0].maxQuantityPerCheckout").value(0));
 
         verify(getMyProductsUseCase).execute(AUTH_HEADER);
     }
@@ -163,7 +194,11 @@ class ProductControllerTest {
 
         mockMvc.perform(get("/api/products/123-abc"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.nama").value("KitKat Matcha Jepang"));
+                .andExpect(jsonPath("$.nama").value("KitKat Matcha Jepang"))
+                .andExpect(jsonPath("$.rating").value(0.0))
+                .andExpect(jsonPath("$.ratingCount").value(0))
+                .andExpect(jsonPath("$.productType").value("regular"))
+                .andExpect(jsonPath("$.maxQuantityPerCheckout").value(0));
     }
 
     @Test
@@ -186,6 +221,12 @@ class ProductControllerTest {
                   "deskripsi": "Updated description",
                   "harga": 60000.0,
                   "stok": 30,
+                  "rating": 0.0,
+                  "ratingCount": 0,
+                  "productType": "regular",
+                  "warStartTime": null,
+                  "warEndTime": null,
+                  "maxQuantityPerCheckout": 0,
                   "negaraAsal": "Jepang",
                   "imageUrls": []
                 }
@@ -195,7 +236,11 @@ class ProductControllerTest {
                         .header(HttpHeaders.AUTHORIZATION, AUTH_HEADER)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonRequest))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.rating").value(0.0))
+                .andExpect(jsonPath("$.ratingCount").value(0))
+                .andExpect(jsonPath("$.productType").value("regular"))
+                .andExpect(jsonPath("$.maxQuantityPerCheckout").value(0));
 
         verify(updateProductUseCase)
                 .execute(anyString(), anyString(), any(Product.class));
@@ -214,6 +259,12 @@ class ProductControllerTest {
                   "nama": "Gak Ada",
                   "harga": 0.0,
                   "stok": 0,
+                  "rating": 0.0,
+                  "ratingCount": 0,
+                  "productType": "regular",
+                  "warStartTime": null,
+                  "warEndTime": null,
+                  "maxQuantityPerCheckout": 0,
                   "imageUrls": []
                 }
                 """;
@@ -232,7 +283,7 @@ class ProductControllerTest {
         when(updateProductUseCase.execute(anyString(), anyString(), any(Product.class)))
                 .thenThrow(new ResponseStatusException(
                         HttpStatus.FORBIDDEN,
-                        "Only the product owner can update this product"
+                        "Only ADMIN or the product owner can manage this product"
                 ));
 
         String jsonRequest = """
@@ -240,6 +291,12 @@ class ProductControllerTest {
                   "nama": "KitKat Matcha Update",
                   "harga": 60000.0,
                   "stok": 30,
+                  "rating": 0.0,
+                  "ratingCount": 0,
+                  "productType": "regular",
+                  "warStartTime": null,
+                  "warEndTime": null,
+                  "maxQuantityPerCheckout": 0,
                   "imageUrls": []
                 }
                 """;
@@ -265,6 +322,12 @@ class ProductControllerTest {
                   "nama": "KitKat Update",
                   "harga": 60000.0,
                   "stok": 30,
+                  "rating": 0.0,
+                  "ratingCount": 0,
+                  "productType": "regular",
+                  "warStartTime": null,
+                  "warEndTime": null,
+                  "maxQuantityPerCheckout": 0,
                   "imageUrls": ["http://img.com/new.jpg"]
                 }
                 """;
@@ -274,7 +337,11 @@ class ProductControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonRequest))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.imageUrls[0]").value("http://img.com/new.jpg"));
+                .andExpect(jsonPath("$.imageUrls[0]").value("http://img.com/new.jpg"))
+                .andExpect(jsonPath("$.rating").value(0.0))
+                .andExpect(jsonPath("$.ratingCount").value(0))
+                .andExpect(jsonPath("$.productType").value("regular"))
+                .andExpect(jsonPath("$.maxQuantityPerCheckout").value(0));
 
         verify(updateProductUseCase)
                 .execute(anyString(), anyString(), any(Product.class));
@@ -308,7 +375,7 @@ class ProductControllerTest {
     void testDeleteProductForbiddenWhenNotOwner() throws Exception {
         doThrow(new ResponseStatusException(
                 HttpStatus.FORBIDDEN,
-                "Only the product owner can delete this product"
+                "Only ADMIN or the product owner can manage this product"
         )).when(deleteProductUseCase).execute("123-abc", AUTH_HEADER);
 
         mockMvc.perform(delete("/api/products/123-abc")
@@ -326,7 +393,11 @@ class ProductControllerTest {
         mockMvc.perform(get("/api/products/search/nama")
                         .param("nama", "KitKat"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].nama").value("KitKat Matcha Jepang"));
+                .andExpect(jsonPath("$[0].nama").value("KitKat Matcha Jepang"))
+                .andExpect(jsonPath("$[0].rating").value(0.0))
+                .andExpect(jsonPath("$[0].ratingCount").value(0))
+                .andExpect(jsonPath("$[0].productType").value("regular"))
+                .andExpect(jsonPath("$[0].maxQuantityPerCheckout").value(0));
     }
 
     @Test
@@ -337,7 +408,50 @@ class ProductControllerTest {
         mockMvc.perform(get("/api/products/search/jastiper")
                         .param("jastiperId", JASTIPER_ID))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].nama").value("KitKat Matcha Jepang"));
+                .andExpect(jsonPath("$[0].nama").value("KitKat Matcha Jepang"))
+                .andExpect(jsonPath("$[0].rating").value(0.0))
+                .andExpect(jsonPath("$[0].ratingCount").value(0))
+                .andExpect(jsonPath("$[0].productType").value("regular"))
+                .andExpect(jsonPath("$[0].maxQuantityPerCheckout").value(0));
+    }
+
+    @Test
+    void testReduceStock() throws Exception {
+        product1.setStok(19);
+
+        when(productService.reduceStock("123-abc", 1))
+                .thenReturn(product1);
+
+        mockMvc.perform(patch("/api/products/123-abc/stock/reduce")
+                        .param("quantity", "1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.stok").value(19));
+
+        verify(productService).reduceStock("123-abc", 1);
+    }
+
+    @Test
+    void testAddProductRating() throws Exception {
+        product1.setRating(4.5);
+        product1.setRatingCount(1);
+
+        when(productService.addRating(anyString(), anyDouble()))
+                .thenReturn(product1);
+
+        String jsonRequest = """
+                {
+                  "rating": 4.5
+                }
+                """;
+
+        mockMvc.perform(patch("/api/products/123-abc/rating")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequest))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.rating").value(4.5))
+                .andExpect(jsonPath("$.ratingCount").value(1));
+
+        verify(productService).addRating("123-abc", 4.5);
     }
 
     @Test

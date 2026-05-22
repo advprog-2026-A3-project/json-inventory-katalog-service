@@ -15,4 +15,6 @@ public interface ProductService {
     long count();
     void deleteAll();
     Product reduceStock(String id, int quantity);
+
+    Product addRating(String id, double rating);
 }
