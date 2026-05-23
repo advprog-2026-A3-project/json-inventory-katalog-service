@@ -19,6 +19,8 @@ public class CreateProductUseCase {
     public Product execute(String authorizationHeader, Product product) {
         String currentJastiperId = authClient.getCurrentJastiperId(authorizationHeader);
         product.setJastiperId(currentJastiperId);
+        product.setRating(0.0);
+        product.setRatingCount(0);
 
         return productService.save(product);
     }

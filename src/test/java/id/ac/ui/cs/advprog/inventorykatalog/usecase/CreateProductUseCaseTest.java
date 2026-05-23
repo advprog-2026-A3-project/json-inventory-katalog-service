@@ -48,6 +48,24 @@ class CreateProductUseCaseTest {
     }
 
     @Test
+    void executeShouldIgnoreClientControlledFields() {
+        Product product = new Product();
+        product.setJastiperId("attacker");
+        product.setRating(5.0);
+        product.setRatingCount(99);
+        when(authClient.getCurrentJastiperId("Bearer token")).thenReturn("jastiper-1");
+        when(productService.save(product)).thenReturn(product);
+
+        Product result = useCase.execute("Bearer token", product);
+
+        assertSame(product, result);
+        assertEquals("jastiper-1", product.getJastiperId());
+        assertEquals(0.0, product.getRating());
+        assertEquals(0, product.getRatingCount());
+        verify(productService).save(product);
+    }
+
+    @Test
     void executeShouldPropagateAuthErrorAndNotSaveProduct() {
         Product product = new Product();
         ResponseStatusException authError = new ResponseStatusException(HttpStatus.UNAUTHORIZED, "invalid token");
